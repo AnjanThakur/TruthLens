@@ -296,3 +296,10 @@ def test_outdated_accepts_explicit_natural_calendar_dates_in_verbatim_sources(se
         .json()
     )
     assert result["claims"][0]["verdict"] == "outdated"
+
+
+def test_who_authority_is_global_but_not_the_ordinary_pronoun():
+    assert authority_for("WHO was established in 1948.", "US") == "who.int"
+    assert authority_for("The World Health Organization was established in 1948.") == "who.int"
+    assert authority_for("People who use Aadhaar need a document.") == "uidai.gov.in"
+    assert authority_for("People who use the library receive a ticket.") is None

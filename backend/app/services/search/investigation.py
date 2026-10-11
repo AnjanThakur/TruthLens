@@ -13,10 +13,10 @@ class SearchStage:
 
 
 def authority_for(text: str, jurisdiction: str = "IN") -> str | None:
-    if re.search(r"\bWHO\b|World Health Organization", text, re.I):
+    if re.search(r"\bWHO\b", text) or re.search(r"World Health Organization", text, re.I):
         return "who.int"
     if jurisdiction != "IN":
-        return "who.int" if re.search(r"\bWHO\b|World Health Organization", text, re.I) else None
+        return None
     rules = [
         (
             r"banknotes?|\brupees?\s+notes?\b|(?:₹|\bRs\.?|\brupees?)\s*\d+\s*notes?\b|currency|legal tender|demonet|नोट|चलन|नोटबंदी|Reserve Bank|\bRBI\b",
