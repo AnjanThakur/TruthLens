@@ -2,7 +2,7 @@
 
 Repository: https://github.com/AnjanThakur/TruthLens
 
-**Combined integration update:** Person 2 was saved as local commit `c88900c`, then combined with scam-alert commit `50350b4` on `integration/person2-scam-intelligence` without conflicts. See [combined integration](combined-integration.md) for current tests, setup and remaining alert UI/chat work. Main and the scam-alert feature branch were not changed. The earlier Person 2-specific instructions below remain historical context; use the combined branch's publishing instructions when sharing both features.
+**Combined integration update:** Person 2 was saved as local commit `c88900c`, then combined with scam-alert commit `50350b4` on `integration/person2-scam-intelligence` without conflicts. At the owner's request, the existing `feature/scam-alert-intelligence` was then fast-forwarded to contain both features and is now the delivery branch. Main remains unchanged. See [combined integration](combined-integration.md) for tests, setup and remaining alert UI/chat work. Older Person 2-specific branch references below are historical; use the existing scam branch for sharing both features.
 
 Working branch: `feature/person2-whatsapp`. The shareable ZIP contains the current working files, including changes not yet committed; its `HANDOFF-MANIFEST.json` records the base commit and file hashes. Your friend can extract it without waiting for a push. Cloning from GitHub requires these latest changes to be committed and pushed first. Preserve the website, Person 1 backend and shared main history; work through feature branches and reviewed pull requests.
 
@@ -172,7 +172,7 @@ Four root `.tmp` account screenshots are already staged. The new ignore rule doe
 
 ```powershell
 cd "C:\Users\Gaurav Choithramani\Desktop\hackOnTrack"
-git switch feature/person2-whatsapp
+git switch feature/scam-alert-intelligence
 git restore --staged -- .tmp
 git add .
 git status --short
@@ -183,7 +183,7 @@ Review the staged list: no `.env`, `.tmp`, Notepad secrets, screenshots of crede
 
 ```powershell
 git commit -m "Add Twilio WhatsApp integration and project handoff"
-git push -u origin feature/person2-whatsapp
+git push -u origin feature/scam-alert-intelligence
 git rev-parse --short HEAD
 ```
 

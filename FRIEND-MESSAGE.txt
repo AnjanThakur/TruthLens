@@ -1,6 +1,6 @@
 Please extract this ZIP into a fresh folder and open TruthLens/START-HERE.md.
 
-UPDATE: The combined branch is integration/person2-scam-intelligence. Read docs/combined-integration.md first. It combines saved Person 2 work with the scam-alert backend API; the consent workflow, reviewer UI and chat wiring for alerts still need implementation. This does not automatically publish any Channel messages. Full merged backend tests on this laptop: 291 passed, three existing failures, two native-audio skips; website 40 and adapter 92 passed.
+UPDATE: Use the existing feature/scam-alert-intelligence branch for the combined code. The owner requested delivery on this same branch after the merge was prepared separately. Read docs/combined-integration.md first. It combines saved Person 2 work with the scam-alert backend API; the consent workflow, reviewer UI and chat wiring for alerts still need implementation. This does not automatically publish any Channel messages. Full merged backend tests on this laptop: 291 passed, three existing failures, two native-audio skips; website 40 and adapter 92 passed.
 
 It contains the current website, actual FastAPI backend, separate WhatsApp adapter, original requirements, API schemas/examples, configuration templates, tests, SQL migrations and the updated completion handoff. You do not need me to manually send the API files.
 
@@ -11,6 +11,6 @@ Latest offline Person 2 checks passed: 40 website tests, 22 browser/accessibilit
 No real keys, private account screenshots, chat state or Git history are included. Offline tests need no keys. For live work, use your own Gemini/Tavily keys, Twilio Sandbox and ngrok account, or ask for deliberate collaborator access privately. Supabase is needed for hosted private history only. Setup locations and every environment variable group are in START-HERE and the handoff. Ask me before paid provider tests, live WhatsApp sends, account changes or production publishing.
 
 Repository: https://github.com/AnjanThakur/TruthLens
-Combined branch: integration/person2-scam-intelligence
+Combined delivery branch: feature/scam-alert-intelligence
 Person 2 branch: feature/person2-whatsapp
-The ZIP contains current working files; its manifest records the base commit and current file hashes. The combined branch has been created locally but not pushed. Coordinate pushing the combined branch before normal Git collaboration, and do not overwrite shared main.
+The ZIP contains current working files; its manifest records the base commit and current file hashes. Use the updated existing scam-alert branch for Git collaboration and do not overwrite shared main. The integration branch is only the earlier merge-preparation checkpoint.

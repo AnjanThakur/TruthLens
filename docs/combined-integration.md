@@ -1,13 +1,13 @@
 # Person 2 + scam intelligence — combined integration
 
-Combined locally on 2026-10-11 in `integration/person2-scam-intelligence`. No GitHub push, main merge, account changes, live provider calls, live WhatsApp sends or production release was performed.
+Combined locally on 2026-10-11 in `integration/person2-scam-intelligence`, then fast-forwarded into the existing **`feature/scam-alert-intelligence`** at the owner's request. Use that existing scam branch for delivery and future work. Main has not been merged or changed. No account changes, live provider calls, live WhatsApp sends or production release were performed by this integration work.
 
 ## What was combined
 
 1. Checked the staged Person 2 files for excluded paths, known local secret values and common credential patterns, including Word document contents. No private environment files, account screenshots or chat databases were committed.
 2. Saved Person 2 work as `c88900c` on `feature/person2-whatsapp`, preserving its earlier `0e813a2` commit.
 3. Created `integration/person2-scam-intelligence` from that saved state.
-4. Merged `origin/feature/scam-alert-intelligence` (`50350b4`) without conflicts. Both histories remain in a merge commit. Main and the scam feature were not modified.
+4. Merged `origin/feature/scam-alert-intelligence` (`50350b4`) without conflicts. Both histories remain in a merge commit. Main and the scam feature were untouched during that isolated merge; the scam branch was subsequently fast-forwarded to the combined state at the owner's request, retaining its existing history.
 5. Confirmed the existing verification API/routes/schemas/OpenAPI snapshot are unchanged from Person 2, and alert implementation/tests/schema are unchanged from the fetched scam branch.
 
 This is a tested **source integration**, not a claim that scam alerts are already available in the website or chatbot. The two services intentionally remain separate. The existing website and WhatsApp verification paths continue using the original backend.
@@ -92,19 +92,19 @@ The original handoff's evidence-quality, live-media/language, website, hosted-hi
 
 ## Publish both features together, when ready
 
-Review `git status` and current commit first. The local integration is already committed; no additional merge command is required. To publish this combined branch:
+Review `git status` and current commit first. The integration is already committed and fast-forwarded into the existing scam branch; no additional merge command is required. To publish or update that same branch:
 
 ```powershell
-git switch integration/person2-scam-intelligence
-git push -u origin integration/person2-scam-intelligence
+git switch feature/scam-alert-intelligence
+git push -u origin feature/scam-alert-intelligence
 ```
 
-Then create a reviewed pull request to main. Do not force-push or overwrite either feature branch. Pushing requires contributor permission on the repository. If rejected, stop and inspect the error rather than resetting/rebasing shared history blindly.
+Then create a reviewed pull request to main when ready. Use normal pushes retaining history; do not force-push or overwrite main. Pushing requires contributor permission on the repository. If rejected, stop and inspect the error rather than resetting/rebasing shared history blindly.
 
 Your friend should clone the combined branch after that push:
 
 ```powershell
-git clone --branch integration/person2-scam-intelligence https://github.com/AnjanThakur/TruthLens.git
+git clone --branch feature/scam-alert-intelligence https://github.com/AnjanThakur/TruthLens.git
 ```
 
 The rebuilt `dist/handoff/TruthLens-Friend-Handoff.zip` also includes both features, the separate alert API schema and this document. Its manifest records the snapshot; private files and Git history remain excluded.

@@ -4,7 +4,7 @@ Person 2's Next.js application for reviewing forwarded claims, original evidence
 
 Current collaborator handoff: [remaining work, APIs, private configuration and startup](docs/current-integration-handoff.md). Read it before older gate reports, which include historical blockers.
 
-Combined branch: `integration/person2-scam-intelligence` now contains the saved Person 2 work and the scam-alert feature. See [merge validation and what remains to connect](docs/combined-integration.md). The alert service is separate; merging source does not automatically add a dashboard or chatbot consent/alert commands.
+Combined delivery branch: `feature/scam-alert-intelligence` contains the saved Person 2 work and the scam-alert feature. The combination was prepared on `integration/person2-scam-intelligence`, then fast-forwarded into the existing scam branch at the owner's request. See [merge validation and what remains to connect](docs/combined-integration.md). The alert service is separate; merging source does not automatically add a dashboard or chatbot consent/alert commands.
 
 For a single-file collaborator package, read [START-HERE](START-HERE.md). Run `py -3.12 scripts/build_handoff.py` to build `dist/handoff/TruthLens-Friend-Handoff.zip` from current working files. It includes code, requirements, API schemas and setup templates; private configuration, chat state, screenshots, dependencies and Git history are excluded. This does not commit or push changes.
 

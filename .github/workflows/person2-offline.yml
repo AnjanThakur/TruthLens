@@ -1,7 +1,7 @@
 name: TruthLens integration offline acceptance
 on:
   push:
-    branches: [feature/person2-whatsapp, integration/person2-scam-intelligence]
+    branches: [feature/person2-whatsapp, feature/scam-alert-intelligence, integration/person2-scam-intelligence]
   pull_request:
     paths: ['frontend/**', 'whatsapp-adapter/**', 'supabase/**', 'backend/**', 'docs/scam-alert*', '.github/workflows/person2-offline.yml']
 permissions:
