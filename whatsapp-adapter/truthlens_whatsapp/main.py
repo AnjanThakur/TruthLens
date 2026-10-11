@@ -7,15 +7,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 
-from .config import Settings
+from .config import load_settings
 from .errors import ServiceError
 from .store import Store
+from .twilio_webhook import router as twilio_router
 
 
 def create_app(settings=None, store=None):
     @asynccontextmanager
     async def lifespan(app):
-        app.state.settings = settings or Settings()
+        app.state.settings = settings or load_settings()
         app.state.store = store or Store(app.state.settings)
         yield
 
@@ -26,6 +27,7 @@ def create_app(settings=None, store=None):
         redoc_url=None,
         openapi_url=None,
     )
+    app.include_router(twilio_router)
 
     @app.middleware("http")
     async def headers(request, call_next):
@@ -40,12 +42,16 @@ def create_app(settings=None, store=None):
         return {
             "status": "ok",
             "response_mode": config.response_mode,
+            "messaging_provider": config.messaging_provider,
             "meta_outbound_enabled": config.meta_outbound_enabled,
-            "note": "Configuration only; not proof of Meta delivery or provider availability.",
+            "twilio_outbound_enabled": config.twilio_outbound_enabled,
+            "note": "Configuration only; not proof of message delivery or provider availability.",
         }
 
     @app.get("/webhook/whatsapp", response_class=PlainTextResponse)
     async def challenge(request: Request):
+        if request.app.state.settings.messaging_provider != "meta":
+            raise HTTPException(404, "Transport not enabled")
         query = request.query_params
         expected = request.app.state.settings.whatsapp_verify_token.get_secret_value()
         token = query.get("hub.verify_token", "")
@@ -62,6 +68,8 @@ def create_app(settings=None, store=None):
     @app.post("/webhook/whatsapp")
     async def webhook(request: Request):
         config = request.app.state.settings
+        if config.messaging_provider != "meta":
+            raise HTTPException(404, "Transport not enabled")
         data = bytearray()
         async for chunk in request.stream():
             data.extend(chunk)

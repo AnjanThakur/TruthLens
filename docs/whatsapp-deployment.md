@@ -1,6 +1,6 @@
 # WhatsApp deployment preparation
 
-Prepared only. No host, tunnel, Meta asset, phone number or public deployment has been created. Owner approval is required before account actions, live sends, provider tests or publishing.
+Production preparation only. A local ngrok/Twilio Sandbox test has delivered one real text reply; no production deployment has been created. The verification was partial/unconfirmed, and Meta's test account remains restricted. Owner approval is required before further account actions, live sends, provider tests or publishing.
 
 ## Topology
 
@@ -13,9 +13,11 @@ For a hosted local-mode demonstration, SQLite needs a persistent volume and a si
 ## Host configuration
 
 - Public route: HTTPS `GET/POST /webhook/whatsapp`; health exposes only configuration state. No admin, report or queue inspection endpoint is public.
+- That route applies to Meta. A test-only Twilio instance uses `POST /webhook/twilio/whatsapp` and signed per-message status callbacks; do not configure the Meta route in Twilio. Twilio production mode remains intentionally rejected.
 - Preserve raw request bytes for HMAC. Disable request-body and query-string logging, including challenge tokens. Apply edge request-size/connection limits. Never cache webhook responses.
 - Run a worker continuously, with graceful shutdown and restart policy. Its default 30-minute processing lease exceeds bounded request deadlines; an expired lease marks a job failed without repeating paid calls.
 - Limit worker replicas according to provider budget; start with one. Database admission and per-sender serialization protect duplicate work, but multi-host failure recovery must be acceptance-tested before scaling.
+- For separately approved local acceptance, use `python -m truthlens_whatsapp.controlled_test` with one fresh inbound message ID and explicit limits. It processes/sends only that job and refuses to replay it on rerun. Its cap counts backend HTTP requests, not Gemini/Tavily calls inside P1; P1 must enforce the provider budget. Never run a continuous worker beside the controlled test.
 - Backend network access must be private or protected by an authenticated gateway. Setting `TRUTHLENS_BACKEND_TOKEN` alone does not add authentication to P1. Do not expose their unauthenticated endpoints publicly.
 - Configure encrypted secrets privately. Production requires backend mode, PostgreSQL and actual HTTPS support contact. Meta access tokens must be rotated/reissued according to the chosen authorized flow.
 - Add host resource limits, database connection limits and edge abuse protection. Rate-limit web verification separately; CORS is not authentication.

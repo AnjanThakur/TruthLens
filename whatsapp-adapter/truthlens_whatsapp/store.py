@@ -11,6 +11,9 @@ from cryptography.fernet import Fernet
 from .errors import ServiceError
 
 DDL = """
+CREATE TABLE IF NOT EXISTS transport_config (
+ id INTEGER PRIMARY KEY, provider TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS jobs (
  id TEXT PRIMARY KEY, sender TEXT NOT NULL, payload TEXT, state TEXT NOT NULL,
  created DOUBLE PRECISION NOT NULL, lease DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -40,6 +43,21 @@ class Store:
             for statement in DDL.split(";"):
                 if statement.strip():
                     self.execute(db, statement)
+            provider = self.execute(
+                db, "SELECT provider FROM transport_config WHERE id=1"
+            ).fetchone()
+            if provider and provider["provider"] != settings.messaging_provider:
+                raise ValueError("Use a separate database for each messaging provider")
+            if not provider:
+                # Existing databases predate transport selection and belong to Meta.
+                has_jobs = self.execute(db, "SELECT id FROM jobs LIMIT 1").fetchone()
+                if has_jobs and settings.messaging_provider != "meta":
+                    raise ValueError("Use a new database for Twilio; preserve existing Meta state")
+                self.execute(
+                    db,
+                    "INSERT INTO transport_config(id,provider) VALUES(1,?)",
+                    (settings.messaging_provider,),
+                )
 
     def identity(self, value):
         return hmac.new(
@@ -140,7 +158,7 @@ class Store:
             row = self.execute(db, "SELECT * FROM preferences WHERE sender=?", (sender,)).fetchone()
             return dict(row) if row else {"language": "en", "stopped": 0}
 
-    def claim(self):
+    def claim(self, job_id=None):
         now = time.time()
         with self.tx() as db:
             # A crashed provider call is NOT automatically repeated; it may have consumed credits.
@@ -149,11 +167,16 @@ class Store:
                 "UPDATE jobs SET state='failed',error='worker_interrupted' WHERE state='processing' AND lease<?",
                 (now,),
             )
-            sql = "SELECT * FROM jobs j WHERE state='received' AND NOT EXISTS (SELECT 1 FROM jobs p WHERE p.sender=j.sender AND p.state='processing') ORDER BY created LIMIT 1"
+            scope = " AND j.id=?" if job_id is not None else ""
+            sql = (
+                "SELECT * FROM jobs j WHERE state='received'"
+                + scope
+                + " AND NOT EXISTS (SELECT 1 FROM jobs p WHERE p.sender=j.sender AND p.state='processing') ORDER BY created LIMIT 1"
+            )
             if self.pg:
                 self.execute(db, "SELECT pg_advisory_xact_lock(927342)")
                 sql += " FOR UPDATE SKIP LOCKED"
-            row = self.execute(db, sql).fetchone()
+            row = self.execute(db, sql, (job_id,) if job_id is not None else ()).fetchone()
             if not row:
                 return None
             self.execute(
@@ -176,6 +199,12 @@ class Store:
                 ),
             )
 
+    def refresh_payload(self, job, message):
+        encrypted = self.seal(message)
+        with self.tx() as db:
+            self.execute(db, "UPDATE jobs SET payload=? WHERE id=?", (encrypted, job["id"]))
+        job["payload"] = encrypted
+
     def last_report(self, sender):
         with self.tx() as db:
             row = self.execute(
@@ -194,12 +223,18 @@ class Store:
                     (str(uuid4()), job_id, part, self.seal(body), time.time()),
                 )
 
-    def next_send(self):
+    def next_send(self, job_id=None):
         with self.tx() as db:
-            sql = "SELECT o.*,j.payload,j.sender FROM outbox o JOIN jobs j ON j.id=o.job_id WHERE o.state='prepared' AND o.due<=? AND j.payload IS NOT NULL AND NOT EXISTS(SELECT 1 FROM outbox p WHERE p.job_id=o.job_id AND p.part<o.part AND p.state NOT IN ('accepted','sent','delivered','read')) ORDER BY o.created,o.part LIMIT 1"
+            scope = " AND o.job_id=?" if job_id is not None else ""
+            sql = (
+                "SELECT o.*,j.payload,j.sender FROM outbox o JOIN jobs j ON j.id=o.job_id WHERE o.state='prepared' AND o.due<=?"
+                + scope
+                + " AND j.payload IS NOT NULL AND NOT EXISTS(SELECT 1 FROM outbox p WHERE p.job_id=o.job_id AND p.part<o.part AND p.state NOT IN ('accepted','sent','delivered','read')) ORDER BY o.created,o.part LIMIT 1"
+            )
             if self.pg:
                 sql += " FOR UPDATE OF o SKIP LOCKED"
-            row = self.execute(db, sql, (time.time(),)).fetchone()
+            args = (time.time(), job_id) if job_id is not None else (time.time(),)
+            row = self.execute(db, sql, args).fetchone()
             if row:
                 self.execute(
                     db,
@@ -257,8 +292,11 @@ class Store:
                 "UPDATE jobs SET payload=NULL,report=NULL WHERE created<?",
                 (now - self.settings.content_retention_hours * 3600,),
             )
-            self.execute(
-                db,
-                "DELETE FROM jobs WHERE created<?",
-                (now - self.settings.dedup_retention_days * 86400,),
-            )
+            if self.settings.messaging_provider != "twilio":
+                self.execute(
+                    db,
+                    "DELETE FROM jobs WHERE created<?",
+                    (now - self.settings.dedup_retention_days * 86400,),
+                )
+            # Twilio signatures have no timestamp: retain content-free hashed SID
+            # tombstones so replaying an old signed event cannot create a new job.

@@ -6,12 +6,15 @@ from .meta_client import retry_after
 
 
 class TruthLensClient:
-    def __init__(self, settings, client):
+    def __init__(self, settings, client, *, request_budget=None):
         self.settings, self.client = settings, client
+        self.request_budget = request_budget
 
     async def call(self, path, schema, **kwargs):
-        if not (self.settings.backend_enabled and self.settings.provider_credentials_rotated):
+        if not (self.settings.backend_enabled and self.settings.provider_credentials_authorized):
             raise ServiceError("backend_disabled")
+        if self.request_budget is not None:
+            self.request_budget.reserve()
         headers = {}
         if self.settings.truthlens_backend_token.get_secret_value():
             headers["Authorization"] = (

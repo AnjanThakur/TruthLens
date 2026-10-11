@@ -33,6 +33,20 @@ def test_backend_configuration_requires_rotation_and_approval(settings):
         Settings(_env_file=None, **args)
 
 
+def test_revocation_waiver_needs_approval_and_cannot_authorize_production(settings):
+    args = settings.model_dump()
+    args.update(response_mode="backend", provider_key_revocation_waived=True)
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, **args)
+    args["backend_enabled"] = True
+    approved = Settings(_env_file=None, **args)
+    assert approved.provider_credentials_authorized
+    assert not approved.provider_credentials_rotated
+    args["bot_env"] = "production"
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, **args)
+
+
 def test_stop_still_honored_when_queue_full(settings, store, message):
     settings.max_queue_jobs = 1
     store.enqueue([message])

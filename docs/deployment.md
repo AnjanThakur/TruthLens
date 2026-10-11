@@ -24,6 +24,10 @@ Confirm platform upload/time limits before accepting media. The app provisionall
 
 Development synthetic demo: `npm run dev:mock`, prominent fixture warnings, no real extraction, no real translation and no live saving. Normal dev/staging: both flags off and configured P1 origin. A hosted production build requires the live upstream; it never substitutes demo results during an outage.
 
-## Optional WhatsApp
+## Required WhatsApp service
 
-Follow `meta-setup.md` after the core is ready. P1 deploys signed webhook code separately. A public demo QR or test bot is a G5 milestone, not a prerequisite for web verification.
+WhatsApp is a required deliverable under the owner's revised roadmap. Person 2's separate adapter calls Person 1's existing engine; the website remains independently usable. See `twilio-sandbox-setup.md` for the current test transport and `whatsapp-deployment.md` for deployment preparation. Twilio Sandbox is test-only; production transport/account acceptance and owner publication approval remain pending. No Channel integration is provided.
+
+The website proxy now defaults to 195 seconds to outlive P1's 180-second default deadline. `BACKEND_TIMEOUT_MS` supports 1–300 seconds; the browser allows 330 seconds. Configure the host accordingly. Setting a longer application timeout does not extend a hosting platform's invocation limit. `MAX_UPLOAD_BYTES` is shared by the server and browser UI and can be reduced below 10 MiB for the selected host; leave allowance for multipart overhead.
+
+`.github/workflows/person2-offline.yml` prepares separate website and adapter checks without provider/account secrets. It has not been executed on GitHub yet. Local browser integration uses a loopback-only fake P1 service and explicitly labeled fictional responses, not real evidence acceptance.

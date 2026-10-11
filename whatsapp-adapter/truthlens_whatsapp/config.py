@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -12,6 +13,13 @@ class Settings(BaseSettings):
     meta_outbound_enabled: bool = False
     backend_enabled: bool = False
     provider_credentials_rotated: bool = False
+    provider_key_revocation_waived: bool = False
+    messaging_provider: str = "meta"
+    twilio_outbound_enabled: bool = False
+    twilio_account_sid: str = ""
+    twilio_auth_token: SecretStr = SecretStr("")
+    twilio_whatsapp_number: str = ""
+    twilio_public_base_url: str = ""
     whatsapp_access_token: SecretStr = SecretStr("")
     whatsapp_phone_number_id: str = ""
     whatsapp_waba_id: str = ""
@@ -42,13 +50,42 @@ class Settings(BaseSettings):
             "backend",
         }:
             raise ValueError("Unsupported environment or response mode")
-        if (
-            not self.meta_app_secret.get_secret_value()
-            or not self.whatsapp_verify_token.get_secret_value()
-        ):
-            raise ValueError("Configure webhook secrets privately")
-        if not self.whatsapp_phone_number_id or not self.whatsapp_waba_id:
-            raise ValueError("Configure the intended phone and WABA IDs")
+        if self.messaging_provider not in {"meta", "twilio"}:
+            raise ValueError("Unsupported messaging provider")
+        if self.messaging_provider == "meta":
+            if (
+                not self.meta_app_secret.get_secret_value()
+                or not self.whatsapp_verify_token.get_secret_value()
+            ):
+                raise ValueError("Configure webhook secrets privately")
+            if not self.whatsapp_phone_number_id or not self.whatsapp_waba_id:
+                raise ValueError("Configure the intended phone and WABA IDs")
+            if self.twilio_outbound_enabled:
+                raise ValueError("Twilio sending cannot be enabled on a Meta instance")
+        else:
+            if self.bot_env != "test":
+                raise ValueError("Twilio connector is for local Sandbox testing only")
+            if self.meta_outbound_enabled:
+                raise ValueError("Meta sending cannot be enabled on a Twilio instance")
+            if not re.fullmatch(r"AC[0-9a-fA-F]{32}", self.twilio_account_sid):
+                raise ValueError("Configure the Twilio Account SID")
+            if not self.twilio_auth_token.get_secret_value():
+                raise ValueError("Configure the Twilio primary Auth Token privately")
+            if not re.fullmatch(r"whatsapp:\+[1-9][0-9]{5,14}", self.twilio_whatsapp_number):
+                raise ValueError("Configure the actual Twilio WhatsApp sender")
+            public = urlsplit(self.twilio_public_base_url)
+            if (
+                public.scheme != "https"
+                or not public.hostname
+                or public.username
+                or public.password
+                or public.port not in {None, 443}
+                or public.path not in {"", "/"}
+                or public.query
+                or public.fragment
+            ):
+                raise ValueError("Configure the exact HTTPS tunnel origin without a path")
+            self.twilio_public_base_url = self.twilio_public_base_url.rstrip("/")
         if len(self.identity_hash_secret.get_secret_value()) < 32:
             raise ValueError("Configure a stable identity hashing secret of at least 32 characters")
         if not self.state_encryption_key.get_secret_value():
@@ -69,9 +106,12 @@ class Settings(BaseSettings):
         ):
             raise ValueError("Configure a fixed backend origin without credentials")
         if self.response_mode == "backend" and not (
-            self.backend_enabled and self.provider_credentials_rotated
+            self.backend_enabled and self.provider_credentials_authorized
         ):
-            raise ValueError("Backend mode requires provider approval and confirmed key rotation")
+            raise ValueError(
+                "Backend mode requires provider approval and confirmed key rotation "
+                "or an explicit test-only revocation waiver"
+            )
         if self.bot_env == "production":
             if not self.database_url.get_secret_value().startswith("postgresql://"):
                 raise ValueError("Production needs durable PostgreSQL storage")
@@ -79,7 +119,25 @@ class Settings(BaseSettings):
                 raise ValueError("Production needs backend mode and a real support URL")
         return self
 
+    @property
+    def provider_credentials_authorized(self):
+        return self.provider_credentials_rotated or (
+            self.bot_env == "test" and self.provider_key_revocation_waived
+        )
+
+    @property
+    def outbound_enabled(self):
+        return (
+            self.twilio_outbound_enabled
+            if self.messaging_provider == "twilio"
+            else self.meta_outbound_enabled
+        )
+
     def sqlite_path(self):
         path = Path(self.database_url.get_secret_value().removeprefix("sqlite:///"))
         path.parent.mkdir(parents=True, exist_ok=True)
         return path
+
+
+def load_settings():
+    return Settings(_env_file=os.environ.get("TRUTHLENS_ENV_FILE", ".env"))

@@ -1,5 +1,5 @@
 import { VerificationWorkspace } from '@/components/verification-workspace';
-import { isMockMode } from '@/lib/api/server';
+import { isMockMode, serverUploadLimit } from '@/lib/api/server';
 import { historyConfigured } from '@/lib/supabase/server';
 import { whatsappLink } from '@/lib/whatsapp';
 export const dynamic = 'force-dynamic';
@@ -9,6 +9,7 @@ export default function Home() {
       mock={isMockMode()}
       historyEnabled={historyConfigured()}
       whatsappUrl={whatsappLink()}
+      maxUploadBytes={serverUploadLimit()}
     />
   );
 }

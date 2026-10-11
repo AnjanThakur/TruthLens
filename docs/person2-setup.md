@@ -15,7 +15,7 @@
 1. Review `backend-api-contract.md`, `backend-openapi.json` and `person2-contract-reconciliation.md` with Person 1. The earlier `api-contract.md` is historical.
 2. Set a fixed FastAPI origin in `BACKEND_BASE_URL`; never point it at the Next.js app or a user-controlled URL. Paths `/api/*` resolve at that origin.
 3. Set optional server-only `BACKEND_API_TOKEN` only if P1 confirms bearer auth.
-4. Configure timeouts and upload limits to match both P1 and the web host. Frontend provisional limit is 10 MiB. Hosting request limits can be smaller; reduce the UI and server limits together or negotiate a different upload path. Do not silently accept files the platform rejects.
+4. Configure timeouts and upload limits to match both P1 and the web host. Proxy default is 195 seconds (P1 default deadline: 180); supported overrides are 1–300 seconds and the browser waits 330 seconds. The host must support the selected duration. `MAX_UPLOAD_BYTES` is shared by the UI and server, defaults to 10 MiB and may be reduced for hosting limits; allow multipart overhead. Do not silently accept files the platform rejects.
 5. Keep both mock flags off, restart Next.js, check `/api/health`, then test live flows. Normal operation never fetches user URLs directly in Next.js.
 
 ## Supabase
@@ -42,3 +42,5 @@ References: [Next.js installation](https://nextjs.org/docs/app/getting-started/i
 ## Required WhatsApp service
 
 See `../whatsapp-adapter/README.md` for the separate service and `whatsapp-gates.md` for tested scope. No account access, live sends, paid provider use or publication without owner approval.
+
+Latest repeatable offline acceptance and bounded single-message commands are in `person2-local-acceptance.md`. The new production proxy browser suite uses a local fake P1 HTTP service; it can run without a working verification engine or provider keys.

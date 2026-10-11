@@ -2,12 +2,19 @@ import { extractionSchema } from '@/lib/api/contracts';
 import { validateFile } from '@/lib/api/files';
 import { ApiError } from '@/lib/api/errors';
 import { fixtureForType } from '@/lib/fixtures';
-import { isMockMode, requireSameOrigin, responseJson, route, upstream } from '@/lib/api/server';
+import {
+  isMockMode,
+  requireSameOrigin,
+  responseJson,
+  route,
+  upstream,
+  serverUploadLimit,
+} from '@/lib/api/server';
 export const dynamic = 'force-dynamic';
 export function POST(request: Request) {
   return route(async () => {
     requireSameOrigin(request);
-    const maximum = Number(process.env.MAX_UPLOAD_BYTES) || 10485760;
+    const maximum = serverUploadLimit();
     if (Number(request.headers.get('content-length') || 0) > maximum + 65536)
       throw new ApiError('UPLOAD_TOO_LARGE', 'Upload too large.', 413);
     // Bound streamed multipart body before parsing; do not trust Content-Length.

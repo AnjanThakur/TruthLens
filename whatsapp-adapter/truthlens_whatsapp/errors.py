@@ -6,4 +6,4 @@ class ServiceError(Exception):
 
 
 class AmbiguousSend(ServiceError):
-    """Request may have reached Meta. Never blindly resend."""
+    """Request may have reached the messaging provider. Never blindly resend."""

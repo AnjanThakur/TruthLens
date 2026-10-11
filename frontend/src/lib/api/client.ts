@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import { ApiError, errorMessage } from './errors';
+import { CLIENT_TIMEOUT_MS } from './timeouts';
 import {
   extractionSchema,
   requireCompleted,
@@ -22,12 +23,14 @@ export async function request<T>(
       ...init,
       cache: 'no-store',
       signal: init?.signal
-        ? AbortSignal.any([init.signal, AbortSignal.timeout(90000)])
-        : AbortSignal.timeout(90000),
+        ? AbortSignal.any([init.signal, AbortSignal.timeout(CLIENT_TIMEOUT_MS)])
+        : AbortSignal.timeout(CLIENT_TIMEOUT_MS),
     });
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') throw error;
-    throw new ApiError('BACKEND_OFFLINE', errorMessage('BACKEND_OFFLINE'));
+    const code =
+      error instanceof Error && error.name === 'TimeoutError' ? 'TIMEOUT' : 'BACKEND_OFFLINE';
+    throw new ApiError(code, errorMessage(code));
   }
   const body = await response.json().catch(() => null);
   if (!response.ok) {

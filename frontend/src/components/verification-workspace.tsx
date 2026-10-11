@@ -33,7 +33,7 @@ import {
   type InputType,
   type Explanation,
 } from '@/lib/api/contracts';
-import { acceptedTypes, validateFile } from '@/lib/api/files';
+import { acceptedTypes, validateFile, MAX_UPLOAD_BYTES } from '@/lib/api/files';
 import { extractionChunks } from '@/lib/api/chunks';
 import { ApiError, errorMessage } from '@/lib/api/errors';
 import { uiError } from '@/lib/i18n/errors';
@@ -105,10 +105,12 @@ export function VerificationWorkspace({
   mock,
   historyEnabled,
   whatsappUrl,
+  maxUploadBytes = MAX_UPLOAD_BYTES,
 }: {
   mock: boolean;
   historyEnabled: boolean;
   whatsappUrl?: string | null;
+  maxUploadBytes?: number;
 }) {
   const { language, easy, t } = usePreferences();
   const metadataLabels: Record<string, string> = {
@@ -208,7 +210,7 @@ export function VerificationWorkspace({
   function selectFile(next?: File) {
     if (!next || busy) return;
     try {
-      validateFile(next, type);
+      validateFile(next, type, maxUploadBytes);
       setFile(next);
       setError('');
       setExtraction(null);
@@ -246,7 +248,7 @@ export function VerificationWorkspace({
         if (type === 'url') publicUrlSchema.parse(url);
         else {
           if (!file) throw new ApiError('BAD_INPUT', 'Choose a file first.');
-          validateFile(file, type);
+          validateFile(file, type, maxUploadBytes);
         }
         setPhase('extracting');
         const extracted =
@@ -502,7 +504,14 @@ export function VerificationWorkspace({
                     >
                       <UploadCloud size={32} aria-hidden="true" />
                       <strong>{t.dropFile}</strong>
-                      <span>{t.formats}</span>
+                      <span>
+                        {t.formats.replace(
+                          '10',
+                          (maxUploadBytes / 1048576).toLocaleString(language, {
+                            maximumFractionDigits: 3,
+                          }),
+                        )}
+                      </span>
                       <span className="file-formats">
                         {type === 'image'
                           ? 'JPEG · PNG · WebP'

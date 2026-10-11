@@ -1,0 +1,13 @@
+Please extract this ZIP into a fresh folder and open TruthLens/START-HERE.md.
+
+It contains the current website, actual FastAPI backend, separate WhatsApp adapter, original requirements, API schemas/examples, configuration templates, tests, SQL migrations and the updated completion handoff. You do not need me to manually send the API files.
+
+Your Person 1 priorities are evidence/source-fetch reliability, accurate and relevant assessment, native OCR/audio setup and the three recorded backend test failures. Coordinate any backend contract changes; preserve the website and adapter and use the same backend for both.
+
+Latest offline Person 2 checks passed: 40 website tests, 22 browser/accessibility checks, six production-proxy browser checks and 92 adapter tests. One real Twilio text reply reached my phone, but its fact-check was partial/unconfirmed. Live media/languages, full evidence quality, website acceptance, hosted history and production remain unfinished.
+
+No real keys, private account screenshots, chat state or Git history are included. Offline tests need no keys. For live work, use your own Gemini/Tavily keys, Twilio Sandbox and ngrok account, or ask for deliberate collaborator access privately. Supabase is needed for hosted private history only. Setup locations and every environment variable group are in START-HERE and the handoff. Ask me before paid provider tests, live WhatsApp sends, account changes or production publishing.
+
+Repository: https://github.com/AnjanThakur/TruthLens
+Working branch: feature/person2-whatsapp
+The ZIP includes work not yet committed/pushed. Its manifest records the base commit and current file hashes. Do not assume that cloning that base commit alone gives these latest changes, and do not overwrite shared main. We should coordinate pushing the feature branch before normal Git collaboration.

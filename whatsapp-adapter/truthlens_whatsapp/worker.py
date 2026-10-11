@@ -5,7 +5,7 @@ import time
 
 import httpx
 
-from .config import Settings
+from .config import load_settings
 from .errors import AmbiguousSend, ServiceError
 from .message_handler import MessageHandler
 from .meta_client import MetaClient
@@ -16,16 +16,29 @@ log = logging.getLogger("truthlens.whatsapp")
 
 
 class Worker:
-    def __init__(self, settings, store, meta, backend):
+    def __init__(self, settings, store, meta, backend, *, job_id=None):
         self.settings, self.store, self.meta = settings, store, meta
+        self.job_id = job_id
         self.handler = MessageHandler(settings, store, meta, backend)
 
     async def process_one(self):
-        job = self.store.claim()
+        if self.settings.messaging_provider == "twilio" and not self.settings.outbound_enabled:
+            return False
+        job = self.store.claim(self.job_id)
         if not job:
             return False
         try:
+            if self.settings.messaging_provider == "twilio":
+                message = self.store.open(job["payload"])
+                # Fetch Twilio's authoritative receipt time; never extend the 24h
+                # reply window just because a signed webhook was retried/replayed.
+                message["timestamp"] = str(await self.meta.received_at(message))
+                self.store.refresh_payload(job, message)
             bodies, report = await self.handler.handle(job)
+            if self.settings.messaging_provider == "twilio":
+                from .twilio_client import split_reply
+
+                bodies = [part for body in bodies for part in split_reply(body)]
             self.store.prepare(job["id"], bodies)
             self.store.finish(job["id"], report=report)
             log.info("stage=processed job=%s", job["id"][:12])
@@ -57,9 +70,9 @@ class Worker:
 
     async def send_one(self):
         # Disabled means no network call and no state transition. Approval is a human action.
-        if not self.settings.meta_outbound_enabled:
+        if not self.settings.outbound_enabled:
             return False
-        item = self.store.next_send()
+        item = self.store.next_send(self.job_id)
         if not item:
             return False
         message = self.store.open(item["payload"])
@@ -77,7 +90,7 @@ class Worker:
         except AmbiguousSend:
             self.store.send_state(item["id"], "uncertain")
         except ServiceError as exc:
-            if exc.code == "meta_rate_limit" and item["attempts"] < 2:
+            if exc.code in {"meta_rate_limit", "twilio_rate_limit"} and item["attempts"] < 2:
                 self.store.send_state(item["id"], "prepared", delay=exc.retry_after or 60)
             else:
                 self.store.send_state(item["id"], "failed")
@@ -88,7 +101,7 @@ class Worker:
 
 
 async def run():
-    settings = Settings()
+    settings = load_settings()
     store = Store(settings)
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
@@ -98,9 +111,13 @@ async def run():
         except NotImplementedError:
             pass  # Windows console Ctrl+C is handled by asyncio.run.
     async with httpx.AsyncClient(follow_redirects=False, trust_env=False) as client:
-        worker = Worker(
-            settings, store, MetaClient(settings, client), TruthLensClient(settings, client)
-        )
+        if settings.messaging_provider == "twilio":
+            from .twilio_client import TwilioClient
+
+            transport = TwilioClient(settings, client)
+        else:
+            transport = MetaClient(settings, client)
+        worker = Worker(settings, store, transport, TruthLensClient(settings, client))
         last_cleanup = 0
         while not stop.is_set():
             if time.time() - last_cleanup >= 60:
@@ -108,6 +125,12 @@ async def run():
                 last_cleanup = time.time()
             processed = await worker.process_one()
             sent = await worker.send_one()
+            if sent and settings.messaging_provider == "twilio":
+                # Sandbox permits at most one message every three seconds.
+                try:
+                    await asyncio.wait_for(stop.wait(), timeout=3.1)
+                except TimeoutError:
+                    pass
             if not processed and not sent:
                 try:
                     await asyncio.wait_for(stop.wait(), timeout=0.5)

@@ -43,6 +43,19 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 describe('live proxy isolation and errors', () => {
+  it.each([
+    ['BACKEND_BASE_URL', 'not a URL'],
+    ['BACKEND_BASE_URL', 'http://p1.test?token=private'],
+    ['BACKEND_TIMEOUT_MS', '-1'],
+    ['BACKEND_TIMEOUT_MS', 'Infinity'],
+    ['BACKEND_TIMEOUT_MS', '330000'],
+  ])('rejects invalid %s before making any request', async (key, value) => {
+    vi.stubEnv(key, value);
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    expect((await verifyRoute(req('/api/verify', input))).status).toBe(503);
+    expect(fetch).not.toHaveBeenCalled();
+  });
   it('production ignores fixture flags, calls fixed upstream and signs the live snapshot', async () => {
     vi.stubEnv('HISTORY_SIGNING_SECRET', 'test-secret'.repeat(5));
     const fetch = vi.fn<typeof globalThis.fetch>(async () => Response.json(backendResult()));

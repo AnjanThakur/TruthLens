@@ -64,6 +64,28 @@ async def test_exact_backend_requests_and_explain_invariants(settings, report):
     assert len(calls) == 4
 
 
+async def test_test_only_revocation_waiver_and_disabled_backend(settings, report):
+    settings.provider_key_revocation_waived = True
+    calls = []
+
+    def transport(request):
+        calls.append(request)
+        return httpx.Response(200, json=report)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as http:
+        backend = TruthLensClient(settings, http)
+        with pytest.raises(ServiceError, match="backend_disabled"):
+            await backend.verify("A fictional test claim.", "text", "en")
+        assert not calls
+        settings.backend_enabled = True
+        await backend.verify("A fictional test claim.", "text", "en")
+        assert len(calls) == 1
+        settings.bot_env = "production"
+        with pytest.raises(ServiceError, match="backend_disabled"):
+            await backend.verify("A fictional test claim.", "text", "en")
+        assert len(calls) == 1
+
+
 @pytest.mark.parametrize("status", [429, 503, 504])
 async def test_backend_failures_no_automatic_retry(settings, status):
     settings.backend_enabled = settings.provider_credentials_rotated = True

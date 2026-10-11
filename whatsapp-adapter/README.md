@@ -4,6 +4,8 @@ Person 2's isolated Meta Cloud API transport. Person 1's FastAPI remains the onl
 
 **Current status: implemented and tested offline; actual Meta delivery and live backend fact-checking are not yet demonstrated.** Account actions, real WhatsApp sends, provider credits and production publication require the owner's approval. All automated tests use mocked HTTP. Do not interpret a mocked verdict as a factual finding.
 
+An additional **Twilio Sandbox test connector** is available while the owner's Meta test WABA is restricted. It preserves this Meta adapter and reuses the same queue and Person 1 API client. See [Twilio setup](../docs/twilio-sandbox-setup.md) for the separate private configuration, signatures, trial limits and explicit live-test gates. It is not a Channel integration; real Twilio delivery is not yet demonstrated. Install optional `.[twilio]` dependencies when using it.
+
 ## Install and run offline
 
 From this repository (PowerShell):
