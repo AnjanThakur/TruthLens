@@ -1,4 +1,5 @@
 import asyncio
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, File, Request, UploadFile
@@ -57,6 +58,23 @@ async def health(request: Request):
 
 @router.post("/verify", response_model=VerificationResult)
 async def verify(payload: VerifyRequest, request: Request):
+    stamp = request.headers.get("x-truthlens-message-time")
+    if stamp:
+        try:
+            if len(stamp) > 64:
+                raise ValueError
+            message_time = datetime.fromisoformat(stamp)
+            if (
+                message_time.tzinfo is None
+                or not 2000 <= message_time.year
+                or message_time > datetime.now(UTC) + timedelta(minutes=5)
+            ):
+                raise ValueError
+        except ValueError:
+            raise AppError(
+                "message_time_invalid", "Use a timezone-aware original message timestamp.", 400
+            ) from None
+        return await request.app.state.verifier.verify(payload, message_time=message_time)
     return await request.app.state.verifier.verify(payload)
 
 

@@ -35,6 +35,7 @@ STOP_CODES = {
     "llm_live_budget_exhausted",
     "search_budget_exhausted",
     "search_rate_limited",
+    "search_quota_exhausted",
 }
 
 
@@ -138,6 +139,7 @@ async def run(
         provider_max_attempts=1,
         max_claims=1,
         max_evidence=3,
+        max_search_queries_per_claim=2,
     )
     llm, search = BudgetedGemini(settings), BudgetedSearch(settings)
     llm.budget, search.budget = model_budget, search_budget

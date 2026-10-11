@@ -1,0 +1,64 @@
+{
+  "scope": "Identical deterministic fictional records; actual preserved backend code compared with feature backend code. Not live claim accuracy.",
+  "status": "PASS",
+  "avoidable_scenarios_fixed": 4,
+  "cases": [
+    {
+      "scenario": "low_score_official",
+      "before": {
+        "status": "completed",
+        "verdict": "unconfirmed",
+        "sources": 1
+      },
+      "after": {
+        "status": "completed",
+        "verdict": "verified",
+        "sources": 1
+      }
+    },
+    {
+      "scenario": "initial_query_empty",
+      "before": {
+        "status": "completed",
+        "verdict": "unconfirmed",
+        "sources": 0
+      },
+      "after": {
+        "status": "completed",
+        "verdict": "verified",
+        "sources": 1
+      }
+    },
+    {
+      "scenario": "missing_reviewed_institution",
+      "before": {
+        "status": "completed",
+        "verdict": "unconfirmed",
+        "sources": 1
+      },
+      "after": {
+        "status": "completed",
+        "verdict": "verified",
+        "sources": 1
+      }
+    },
+    {
+      "scenario": "natural_event_dates",
+      "before": {
+        "status": "partial",
+        "verdict": "unconfirmed",
+        "sources": 2
+      },
+      "after": {
+        "status": "completed",
+        "verdict": "outdated",
+        "sources": 2
+      }
+    }
+  ],
+  "provider_requests": {
+    "gemini": 0,
+    "tavily": 0,
+    "twilio": 0
+  }
+}

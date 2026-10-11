@@ -99,8 +99,20 @@ async def format_claim(
             else "weak"
         )
         reason = UNCONFIRMED_REASONS[language][kind]
+        checked = sum(
+            e.source_type != "other"
+            and e.excerpt_provenance == "fetched_page"
+            and "incomplete_content:" not in e.authority_basis
+            for e in claim.evidence
+        )
+        subject = claim.claim_text[:280]
+        context = {
+            "en": f"For “{subject}”, {checked} complete reviewed source(s) were retrieved.",
+            "hi": f"“{subject}” के लिए {checked} पूर्ण, पहचाने गए स्रोत मिले।",
+            "mr": f"“{subject}” साठी {checked} पूर्ण, ओळखलेले स्रोत मिळाले.",
+        }[language]
         return Wording(
-            explanation=LABELS[language]["unconfirmed"] + " " + reason + " " + CAUTION[language],
+            explanation=context + " " + reason + " " + CAUTION[language],
             short_summary=LABELS[language]["unconfirmed"],
             key_points=[reason],
             next_step=CHILD_STEP[language] if audience == "child" else NEXT_STEP[language],

@@ -56,7 +56,16 @@ class AlertEngine:
         translator: ClaimTranslator | None = None,
     ):
         self.settings = settings
-        self.repository = repository or MemoryAlertRepository()
+        if repository is not None:
+            self.repository = repository
+        elif settings.database_path:
+            from app.services.alerts.sqlite_repository import SQLiteAlertRepository
+
+            self.repository = SQLiteAlertRepository(
+                settings.database_path, settings.encryption_key.get_secret_value()
+            )
+        else:
+            self.repository = MemoryAlertRepository()
         self.clock, self.translator = clock, translator
         self.matcher = Matcher(embedder, settings.embedding_similarity)
 

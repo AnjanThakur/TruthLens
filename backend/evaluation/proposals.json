@@ -1,0 +1,16 @@
+{
+  "supported":{"verdict":"verified"},
+  "contradicted":{"verdict":"false"},
+  "qualified":{"verdict":"partially_true","components":[{"span":"opens at 9 am","status":"supported","source":"a"},{"span":"every day","status":"contradicted","source":"a"}]},
+  "superseded":{"verdict":"outdated","witnesses":[{"source":"a","date":"2026-10-01","role":"historical"},{"source":"b","date":"2026-10-10","role":"current"}]},
+  "scope_omitted":{"verdict":"misleading_context"},
+  "unknown":{"verdict":"false"},
+  "conflict":{"verdict":"verified"},
+  "fake_support":{"verdict":"verified"},
+  "inaccessible":{"verdict":"verified"},
+  "wrong_subject":{"verdict":"verified"},
+  "hindi_contradiction":{"verdict":"false"},
+  "marathi_support":{"verdict":"verified"},
+  "syndication":{"verdict":"verified"},
+  "unsupported_component":{"verdict":"verified","components":[{"span":"opens at 9 am","status":"supported","source":"a"},{"span":"every day","status":"not_established","source":"a"}]}
+}

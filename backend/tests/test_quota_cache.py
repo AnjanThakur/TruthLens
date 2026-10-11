@@ -15,6 +15,13 @@ from app.services.providers import GeminiLLM
 from app.services.quota import guidance
 
 
+@pytest.fixture(autouse=True)
+def single_query_budget(settings):
+    # These exact call-count regressions exercise the supported one-query mode.
+    # Multi-stage default budgets are covered independently in test_investigation.py.
+    settings.max_search_queries_per_claim = 1
+
+
 @pytest.mark.parametrize(
     "message",
     [

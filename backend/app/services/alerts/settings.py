@@ -11,6 +11,8 @@ class AlertsSettings(BaseSettings):
     ingest_token: SecretStr = SecretStr("")
     admin_token: SecretStr = SecretStr("")
     pseudonym_secret: SecretStr = SecretStr("")
+    database_path: str = ""
+    encryption_key: SecretStr = SecretStr("")
     min_independent_submissions: int = Field(default=3, ge=2, le=100)
     trend_window_hours: int = Field(default=24, ge=1, le=168)
     baseline_days: int = Field(default=7, ge=1, le=30)
@@ -26,6 +28,15 @@ class AlertsSettings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_configuration(self):
+        if bool(self.database_path) != bool(self.encryption_key.get_secret_value()):
+            raise ValueError("Configure both the isolated alerts database path and encryption key.")
+        if self.database_path:
+            from cryptography.fernet import Fernet
+
+            try:
+                Fernet(self.encryption_key.get_secret_value().encode("ascii"))
+            except (ValueError, UnicodeError):
+                raise ValueError("Configure a valid alerts encryption key.") from None
         secrets = [
             s.get_secret_value()
             for s in (self.ingest_token, self.admin_token, self.pseudonym_secret)
