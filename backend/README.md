@@ -4,6 +4,10 @@ FastAPI implements extraction → atomic claims → Tavily evidence → per-sour
 
 See [API contract](../docs/backend-api-contract.md), [OpenAPI](../docs/backend-openapi.json), and [validation report](validation-report.md). **READY WITH BLOCKERS:** 195 offline tests, Ruff, mypy, dependency/startup/security and exact OpenAPI checks pass. Final live audio failed at transcription with Gemini HTTP 503; counterclaim skipped immediately. Final-pass usage: one Gemini attempt, zero Tavily searches. Prior text/image/PDF/URL workflow PASS does not establish general fact-check accuracy.
 
+## Independent scam alert engine
+
+The optional `app.alerts_app:app` service consumes consented verified claim records, clusters EN/HI/MR variants, detects sample recurrence, and prepares evidence-gated drafts with human review and manual export. It makes no provider calls by default and uses a transactional local memory repository. Run separately on port 8001; the existing verification app and OpenAPI remain unchanged. See [Person 2 integration and demo](../docs/scam-alert-integration.md), [alerts OpenAPI](../docs/scam-alert-openapi.json), and [feature validation](alerts-validation-report.md). No Supabase changes or WhatsApp publishing are included.
+
 ## Run on this machine
 
 The existing virtualenv, ignored `.env`, installed native runtimes and local OCR language data are ready:
