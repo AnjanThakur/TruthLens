@@ -1,0 +1,382 @@
+{
+  "README": "ALL DATA ARE SYNTHETIC UI-ONLY FIXTURES, NEVER REAL FACT-CHECKS. Source URLs example.org are placeholders.",
+  "version": "0.1",
+  "fixtures": [
+    {
+      "fixture_id": "multi_claim_forward",
+      "description": "Long forwarded text with independently supported and contradicted claims; synthetic.",
+      "synthetic": true,
+      "extract_response": null,
+      "verification_response": {
+        "verification_id": "mock-multi",
+        "status": "completed",
+        "input": {
+          "text": "Scheme X provides 2,000 credits to eligible residents. Every resident receives 20,000 credits.",
+          "detected_language": "en",
+          "input_type": "text"
+        },
+        "claims": [
+          {
+            "claim_id": "a1",
+            "claim_text": "Scheme X provides 2,000 credits to eligible residents.",
+            "verdict": "verified",
+            "explanation": "The fictional test notice supports the first claim.",
+            "short_summary": "The fictional test notice supports the first claim.",
+            "evidence": [
+              {
+                "title": "Synthetic test notice eligible",
+                "url": "https://example.org/truthlens-fixture/eligible",
+                "publisher": "FICTIONAL TEST PUBLISHER — NOT A REAL SOURCE",
+                "published_at": "2026-09-01",
+                "retrieved_at": "2026-10-11T09:00:00Z",
+                "source_type": "synthetic_fixture",
+                "stance": "supports",
+                "excerpt": "Illustrative statement for frontend testing: Only qualified residents can receive 2,000 credits.",
+                "what_source_says": "MOCK PARAPHRASE: Only qualified residents can receive 2,000 credits."
+              }
+            ],
+            "limitations": [],
+            "next_step": "Open and inspect original authoritative sources when a real backend is connected.",
+            "temporal_context": null,
+            "original_context": null
+          },
+          {
+            "claim_id": "a2",
+            "claim_text": "Every resident receives 20,000 credits.",
+            "verdict": "false",
+            "explanation": "The fictional notice conflicts with the stated amount and eligibility.",
+            "short_summary": "The fictional notice conflicts with the stated amount and eligibility.",
+            "evidence": [
+              {
+                "title": "Synthetic test notice amount",
+                "url": "https://example.org/truthlens-fixture/amount",
+                "publisher": "FICTIONAL TEST PUBLISHER — NOT A REAL SOURCE",
+                "published_at": "2026-09-01",
+                "retrieved_at": "2026-10-11T09:00:00Z",
+                "source_type": "synthetic_fixture",
+                "stance": "contradicts",
+                "excerpt": "Illustrative statement for frontend testing: The notice limits eligibility and provides only 2,000 credits.",
+                "what_source_says": "MOCK PARAPHRASE: The notice limits eligibility and provides only 2,000 credits."
+              }
+            ],
+            "limitations": [],
+            "next_step": "Open and inspect original authoritative sources when a real backend is connected.",
+            "temporal_context": null,
+            "original_context": null
+          }
+        ],
+        "summary": "Synthetic sample for UI component testing, not a real verification.",
+        "checked_at": "2026-10-11T09:00:00Z",
+        "warnings": [
+          "SYNTHETIC FIXTURE — DOES NOT REPRESENT A REAL FACT-CHECK"
+        ]
+      }
+    },
+    {
+      "fixture_id": "screenshot",
+      "description": "Simulated image OCR extraction, verification, citation support.",
+      "synthetic": true,
+      "extract_response": {
+        "text": "Office hours are 10 AM to 4 PM.",
+        "detected_language": "en",
+        "input_type": "image",
+        "metadata": {
+          "filename": "synthetic-screenshot.png",
+          "ocr_used": true
+        },
+        "warnings": [
+          "Synthetic OCR text for testing only"
+        ]
+      },
+      "verification_response": {
+        "verification_id": "mock-image",
+        "status": "completed",
+        "input": {
+          "text": "Office hours are 10 AM to 4 PM.",
+          "detected_language": "en",
+          "input_type": "image"
+        },
+        "claims": [
+          {
+            "claim_id": "b1",
+            "claim_text": "Office hours are 10 AM to 4 PM.",
+            "verdict": "verified",
+            "explanation": "The fictional office notice supports this schedule.",
+            "short_summary": "The fictional office notice supports this schedule.",
+            "evidence": [
+              {
+                "title": "Synthetic test notice office-hours",
+                "url": "https://example.org/truthlens-fixture/office-hours",
+                "publisher": "FICTIONAL TEST PUBLISHER — NOT A REAL SOURCE",
+                "published_at": "2026-09-01",
+                "retrieved_at": "2026-10-11T09:00:00Z",
+                "source_type": "synthetic_fixture",
+                "stance": "supports",
+                "excerpt": "Illustrative statement for frontend testing: The office notice lists hours as 10 AM–4 PM.",
+                "what_source_says": "MOCK PARAPHRASE: The office notice lists hours as 10 AM–4 PM."
+              }
+            ],
+            "limitations": [],
+            "next_step": "Open and inspect original authoritative sources when a real backend is connected.",
+            "temporal_context": null,
+            "original_context": null
+          }
+        ],
+        "summary": "Synthetic sample for UI component testing, not a real verification.",
+        "checked_at": "2026-10-11T09:00:00Z",
+        "warnings": [
+          "SYNTHETIC FIXTURE — DOES NOT REPRESENT A REAL FACT-CHECK"
+        ]
+      }
+    },
+    {
+      "fixture_id": "hindi_audio",
+      "description": "Hindi transcript / outdated verdict. Actual translations are provided by Person 1, not fixtures.",
+      "synthetic": true,
+      "extract_response": {
+        "text": "आवेदन की अंतिम तारीख 10 सितंबर है।",
+        "detected_language": "hi",
+        "input_type": "audio",
+        "metadata": {
+          "filename": "synthetic-voice-note.ogg",
+          "duration_seconds": 8
+        },
+        "warnings": [
+          "Synthetic transcription for testing only"
+        ]
+      },
+      "verification_response": {
+        "verification_id": "mock-audio",
+        "status": "completed",
+        "input": {
+          "text": "आवेदन की अंतिम तारीख 10 सितंबर है।",
+          "detected_language": "hi",
+          "input_type": "audio"
+        },
+        "claims": [
+          {
+            "claim_id": "c1",
+            "claim_text": "आवेदन की अंतिम तारीख 10 सितंबर है।",
+            "verdict": "outdated",
+            "explanation": "The fictional deadline information was superseded by a newer notice.",
+            "short_summary": "The fictional deadline information was superseded by a newer notice.",
+            "evidence": [
+              {
+                "title": "Synthetic test notice deadlines",
+                "url": "https://example.org/truthlens-fixture/deadlines",
+                "publisher": "FICTIONAL TEST PUBLISHER — NOT A REAL SOURCE",
+                "published_at": "2026-09-01",
+                "retrieved_at": "2026-10-11T09:00:00Z",
+                "source_type": "synthetic_fixture",
+                "stance": "context",
+                "excerpt": "Illustrative statement for frontend testing: A newer notice revised the fictional application deadline.",
+                "what_source_says": "MOCK PARAPHRASE: A newer notice revised the fictional application deadline."
+              }
+            ],
+            "limitations": [
+              "Only test dates; this is not a real scheme."
+            ],
+            "next_step": "Open and inspect original authoritative sources when a real backend is connected.",
+            "temporal_context": null,
+            "original_context": null
+          }
+        ],
+        "summary": "Synthetic sample for UI component testing, not a real verification.",
+        "checked_at": "2026-10-11T09:00:00Z",
+        "warnings": [
+          "SYNTHETIC FIXTURE — DOES NOT REPRESENT A REAL FACT-CHECK"
+        ]
+      }
+    },
+    {
+      "fixture_id": "pdf_notice",
+      "description": "Scanned PDF fallback, misleading-context verdict and conflicting sources.",
+      "synthetic": true,
+      "extract_response": {
+        "text": "All learners automatically qualify for Program Q.",
+        "detected_language": "en",
+        "input_type": "pdf",
+        "metadata": {
+          "filename": "synthetic-notice.pdf",
+          "page_count": 2,
+          "pages": [
+            1,
+            2
+          ]
+        },
+        "warnings": [
+          "Page 2 required OCR (simulated)"
+        ]
+      },
+      "verification_response": {
+        "verification_id": "mock-pdf",
+        "status": "completed",
+        "input": {
+          "text": "All learners automatically qualify for Program Q.",
+          "detected_language": "en",
+          "input_type": "pdf"
+        },
+        "claims": [
+          {
+            "claim_id": "d1",
+            "claim_text": "All learners automatically qualify for Program Q.",
+            "verdict": "misleading_context",
+            "explanation": "The fictional notice omits eligibility requirements.",
+            "short_summary": "The fictional notice omits eligibility requirements.",
+            "evidence": [
+              {
+                "title": "Synthetic test notice program-q",
+                "url": "https://example.org/truthlens-fixture/program-q",
+                "publisher": "FICTIONAL TEST PUBLISHER — NOT A REAL SOURCE",
+                "published_at": "2026-09-01",
+                "retrieved_at": "2026-10-11T09:00:00Z",
+                "source_type": "synthetic_fixture",
+                "stance": "context",
+                "excerpt": "Illustrative statement for frontend testing: A selection process and additional qualification conditions apply.",
+                "what_source_says": "MOCK PARAPHRASE: A selection process and additional qualification conditions apply."
+              },
+              {
+                "title": "Synthetic test notice exceptions",
+                "url": "https://example.org/truthlens-fixture/exceptions",
+                "publisher": "FICTIONAL TEST PUBLISHER — NOT A REAL SOURCE",
+                "published_at": "2026-09-01",
+                "retrieved_at": "2026-10-11T09:00:00Z",
+                "source_type": "synthetic_fixture",
+                "stance": "contradicts",
+                "excerpt": "Illustrative statement for frontend testing: Automatic qualification does not apply to all learners.",
+                "what_source_says": "MOCK PARAPHRASE: Automatic qualification does not apply to all learners."
+              }
+            ],
+            "limitations": [],
+            "next_step": "Open and inspect original authoritative sources when a real backend is connected.",
+            "temporal_context": null,
+            "original_context": null
+          }
+        ],
+        "summary": "Synthetic sample for UI component testing, not a real verification.",
+        "checked_at": "2026-10-11T09:00:00Z",
+        "warnings": [
+          "SYNTHETIC FIXTURE — DOES NOT REPRESENT A REAL FACT-CHECK"
+        ]
+      }
+    },
+    {
+      "fixture_id": "article_url",
+      "description": "Public URL extraction with partial support and neutral evidence stance.",
+      "synthetic": true,
+      "extract_response": {
+        "text": "The program expanded to five regions and removed all fees.",
+        "detected_language": "en",
+        "input_type": "url",
+        "metadata": {
+          "title": "Synthetic public article",
+          "url": "https://example.org/mock-article",
+          "published_at": "2026-10-09"
+        },
+        "warnings": [
+          "Mock article, not fetched from the public web"
+        ]
+      },
+      "verification_response": {
+        "verification_id": "mock-url",
+        "status": "completed",
+        "input": {
+          "text": "The program expanded to five regions and removed all fees.",
+          "detected_language": "en",
+          "input_type": "url"
+        },
+        "claims": [
+          {
+            "claim_id": "e1",
+            "claim_text": "The program expanded to five regions and removed all fees.",
+            "verdict": "partially_true",
+            "explanation": "The fictional sources support the expansion but do not establish the fee claim.",
+            "short_summary": "The fictional sources support the expansion but do not establish the fee claim.",
+            "evidence": [
+              {
+                "title": "Synthetic test notice regions",
+                "url": "https://example.org/truthlens-fixture/regions",
+                "publisher": "FICTIONAL TEST PUBLISHER — NOT A REAL SOURCE",
+                "published_at": "2026-09-01",
+                "retrieved_at": "2026-10-11T09:00:00Z",
+                "source_type": "synthetic_fixture",
+                "stance": "supports",
+                "excerpt": "Illustrative statement for frontend testing: The program expanded to five regions.",
+                "what_source_says": "MOCK PARAPHRASE: The program expanded to five regions."
+              },
+              {
+                "title": "Synthetic test notice fees",
+                "url": "https://example.org/truthlens-fixture/fees",
+                "publisher": "FICTIONAL TEST PUBLISHER — NOT A REAL SOURCE",
+                "published_at": "2026-09-01",
+                "retrieved_at": "2026-10-11T09:00:00Z",
+                "source_type": "synthetic_fixture",
+                "stance": "neutral",
+                "excerpt": "Illustrative statement for frontend testing: The notice does not discuss the fees.",
+                "what_source_says": "MOCK PARAPHRASE: The notice does not discuss the fees."
+              },
+              {
+                "title": "Synthetic ambiguous third-party posting",
+                "url": "https://example.org/truthlens-fixture/unclear",
+                "publisher": "FICTIONAL TEST PUBLISHER — NOT A REAL SOURCE",
+                "published_at": "2026-09-01",
+                "retrieved_at": "2026-10-11T09:00:00Z",
+                "source_type": "synthetic_fixture",
+                "stance": "unclear",
+                "excerpt": "Illustrative statement: the posting is too vague to determine whether fees changed.",
+                "what_source_says": "MOCK PARAPHRASE: The content is insufficiently specific to settle the fee question."
+              }
+            ],
+            "limitations": [
+              "Fee removal is not independently confirmed."
+            ],
+            "next_step": "Open and inspect original authoritative sources when a real backend is connected.",
+            "temporal_context": null,
+            "original_context": null
+          }
+        ],
+        "summary": "Synthetic sample for UI component testing, not a real verification.",
+        "checked_at": "2026-10-11T09:00:00Z",
+        "warnings": [
+          "SYNTHETIC FIXTURE — DOES NOT REPRESENT A REAL FACT-CHECK"
+        ]
+      }
+    },
+    {
+      "fixture_id": "insufficient_evidence",
+      "description": "No evidence, unconfirmed verdict. Must never render false or a citation.",
+      "synthetic": true,
+      "extract_response": null,
+      "verification_response": {
+        "verification_id": "mock-unknown",
+        "status": "completed",
+        "input": {
+          "text": "An unspecified event will occur tomorrow.",
+          "detected_language": "en",
+          "input_type": "text"
+        },
+        "claims": [
+          {
+            "claim_id": "f1",
+            "claim_text": "An unspecified event will occur tomorrow.",
+            "verdict": "unconfirmed",
+            "explanation": "There is insufficient evidence to verify this assertion.",
+            "short_summary": "There is insufficient evidence to verify this assertion.",
+            "evidence": [],
+            "limitations": [
+              "A lack of indexed sources does not establish falsity."
+            ],
+            "next_step": "Open and inspect original authoritative sources when a real backend is connected.",
+            "temporal_context": null,
+            "original_context": null
+          }
+        ],
+        "summary": "Synthetic sample for UI component testing, not a real verification.",
+        "checked_at": "2026-10-11T09:00:00Z",
+        "warnings": [
+          "SYNTHETIC FIXTURE — DOES NOT REPRESENT A REAL FACT-CHECK"
+        ]
+      }
+    }
+  ]
+}
