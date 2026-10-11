@@ -2,7 +2,7 @@
 
 ## Current confirmed boundary (11 October 2026)
 
-**PASS:** prior signed Twilio inbound, prior HTTP 201 template with actual delivered state, signed callback and owner phone receipt; current offline adapter 137 tests. **BLOCKED:** dynamic fact-check/command free-form replies on the trial account confirmed by HTTP 400/code 21654. The development-only ContentSid path sends no arbitrary Body/ContentVariables and does not replace other reports. Earlier single-send approvals are exhausted. This full-system implementation consumed **0 Gemini / 0 Tavily / 0 Twilio sends**, kept the consuming worker paused and did not retry old failed state.
+**PASS:** prior signed Twilio inbound, prior HTTP 201 template with actual delivered state, signed callback and owner phone receipt; current offline adapter 137 tests. **BLOCKED:** dynamic fact-check/command free-form replies on the trial account confirmed by HTTP 400/code 21654. The development-only ContentSid path sends no arbitrary Body/ContentVariables and does not replace other reports. Earlier single-send approvals are exhausted. This full-system phase consumed **2 Gemini / 2 Tavily / 0 Twilio sends** for the separately approved website text test, kept the consuming worker paused and did not retry old failed state.
 
 See [full-system acceptance](final-full-system-acceptance.md) and [outbound diagnostics](../whatsapp-adapter/outbound-validation-report.md). Sections below retain historical tests and should not be treated as current template eligibility or fresh dynamic delivery proof.
 

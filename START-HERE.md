@@ -1,6 +1,6 @@
 # TruthLens — start here, collaborator
 
-> **Current implementation update (11 October 2026):** the full feature implementation and current test/live boundaries are recorded in [full-system acceptance](docs/final-full-system-acceptance.md), with [Windows startup](docs/windows-startup.md). Earlier counts and pending UI statements below are historical. Current offline checks: backend 334, adapter 137, frontend 52, browser 24 and production proxy 6; all passed. Fresh provider-backed acceptance needs new approval; dynamic WhatsApp remains blocked by the trial account.
+> **Current implementation update (11 October 2026):** the full feature implementation and current test/live boundaries are recorded in [full-system acceptance](docs/final-full-system-acceptance.md), with [Windows startup](docs/windows-startup.md). Earlier counts and pending UI statements below are historical. Current offline checks: backend 334, adapter 137, frontend 53, browser 24 and production proxy 6; all passed. The one approved live text result rendered a grounded Verified verdict but remained partial after a source DNS failure; additional provider-backed acceptance needs new approval; dynamic WhatsApp remains blocked by the trial account.
 
 
 This package contains the current website, Person 1 FastAPI backend and independent WhatsApp adapter. Start with this file, then [the completion handoff](docs/current-integration-handoff.md). You do not need the owner's laptop, Notepad files or private API keys to review the code and run the mocked tests.

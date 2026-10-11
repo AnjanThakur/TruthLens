@@ -1,6 +1,6 @@
 # TruthLens full-system acceptance - 11 October 2026
 
-Branch: `feature/scam-alert-intelligence`. Tested implementation commit: `788361f75743aef70c299e4a8b67409a5c8365bb`.
+Branch: `feature/scam-alert-intelligence`. Tested implementation commit: `9f16d4c4e70f2da218ec82b6def200cf29108a0f`.
 Worktree: `D:\HackOnTrack-TruthLens\.worktrees\scam-alert-intelligence`.
 The final documentation commit is additional; use `git rev-parse HEAD` for the delivered tip.
 Main and the owner's uncommitted changes/private configuration were preserved. No reset, main merge or force push was performed.
@@ -9,8 +9,8 @@ Main and the owner's uncommitted changes/private configuration were preserved. N
 
 | Component | Offline/local result | Fresh live acceptance |
 |---|---|---|
-| Backend extraction, investigation and guards | **PASS** - 334 tests; Ruff; mypy 47 files; pip compatibility; exact existing OpenAPI contract | **NOT TESTED** - new Gemini/Tavily approval pending |
-| Website | **PASS** - 52 unit/contract/RLS tests, 24 desktop/mobile/accessibility checks, six production-proxy browser checks; lint/typecheck/format/build | **PASS** for actual local HTTP/proxy health and honest provider-disabled errors; factual result through live providers **NOT TESTED** |
+| Backend extraction, investigation and guards | **PASS** - 334 tests; Ruff; mypy 47 files; pip compatibility; exact existing OpenAPI contract | **PASS** for one grounded live text decision; strict pipeline **FAIL** (partial DNS limitation); other formats **NOT TESTED** |
+| Website | **PASS** - 53 unit/contract/RLS tests, 24 desktop/mobile/accessibility checks, six production-proxy browser checks; lint/typecheck/format/build | **PASS** for actual local HTTP/proxy health and honest provider-disabled errors; one grounded factual result **PASS**; strict pipeline **FAIL** (partial) |
 | Supabase private history | **PASS** for isolated actual SQL ownership/RLS tests and local configuration presence; hosted anonymous read rejected 401/42501 | Authenticated sign-in/save/list/delete **NOT TESTED**; no email sent or existing table modified |
 | Hosted alert reviewer authorization | **PASS** for additive SQL RLS and server role tests | **BLOCKED** - read-only REST returned 404/PGRST205 for `alert_reviewers`; migration/role grant needed |
 | Scam alerts | **PASS** - encrypted isolated persistence/restart/withdrawal; evidence-gated recurrence/drafts/review; website consent and authenticated server proxies | Authenticated hosted contribution/review **BLOCKED** by missing reviewer table; real consented records **NOT TESTED** |
@@ -53,7 +53,7 @@ Seven cases remain correctly unresolved: unknown facts, credible unresolved conf
 
 | Input | Current deterministic/native/proxy checks | Earlier real provider report | Fresh full live check |
 |---|---|---|---|
-| Text | **PASS** | **PASS**, recorded 04:43 acceptance | **NOT TESTED** |
+| Text | **PASS** | **PASS**, recorded 04:43 acceptance | Grounded verdict/rendering **PASS**; strict pipeline **FAIL** (partial) |
 | Screenshot/image | **PASS** - native OCR plus mocked verification | **PASS**, recorded 04:43 acceptance | **NOT TESTED** |
 | WAV/audio | **PASS** - native media validation and mocked transcription/503 recovery | Latest **FAIL** at transcription: `llm_provider_error`, `transient_server`; earlier real WAV transcription had passed | **NOT TESTED** |
 | Scanned PDF | **PASS** - bounded OCR/page/chunk context and structured-response checks | **PASS**, recorded 04:43 acceptance | **NOT TESTED** |
@@ -83,8 +83,19 @@ Official current trial guidance: [Try out WhatsApp](https://www.twilio.com/docs/
 
 See [Windows startup](windows-startup.md) for exact preflight, dependency and rollback commands. Default startup disables provider consumption and outbound sending in child processes without rewriting private `.env` files. The paused worker service is a standby, not an unrestricted queue processor. Do not restart a consuming worker until its account configuration and separate approval permit it.
 
-Prepared live proposal (requires explicit owner approval): one English adult text claim, **"The World Health Organization was established on 7 April 1948."** Primary reference: [WHO Constitution](https://www.who.int/about/governance/constitution). Safe real extraction of that page already succeeded without Gemini/Tavily. The normal search still has to retrieve relevant real evidence; the known page is not injected as fabricated search output.
+Approved and executed live proposal (approval used once): one English adult text claim, **"The World Health Organization was established on 7 April 1948."** Primary reference: [WHO Constitution](https://www.who.int/about/governance/constitution). Safe real extraction of that page already succeeded without Gemini/Tavily. The normal search still has to retrieve relevant real evidence; the known page is not injected as fabricated search output.
 
 Nominal usage: two Gemini calls (claim extraction and grounded assessment), two Tavily searches (primary and contradiction), zero Twilio sends. Enforced process-wide ceilings **5 Gemini attempts / 2 Tavily attempts / 0 Twilio**, including retries. Use isolated backend 8002 and website 3002; leave existing services running. Stop on daily quota exhaustion and record actual errors/partial results rather than substituting fixtures. Independently record website rendering and factual evidence acceptance. Rollback stops only controlled instances, leaving provider-disabled 8000/3001, the paused worker and existing encrypted WhatsApp state intact.
 
-**Actual new usage so far: Gemini 0 / Tavily 0 / Twilio 0.** Public source research, one safe primary-page download, anonymous non-writing Supabase checks and local mocked HTTP are outside those paid-provider counts. Fresh live acceptance remains **NOT TESTED** pending approval. Hosted CI is prepared but execution after push is **NOT TESTED**.
+**Actual new usage: Gemini 2 / Tavily 2 / Twilio 0.** Public source research, one safe primary-page download, anonymous non-writing Supabase checks and local mocked HTTP are outside those paid-provider counts. The approved single-text phase has now run; actual results are recorded below. Other fresh live formats remain **NOT TESTED**. Hosted CI is prepared but execution after push is **NOT TESTED**.
+
+## Actual newly approved one-claim acceptance
+
+The owner approved exactly one WHO text test after offline validation. Executed through the actual browser on isolated website 3002 and controlled backend 8002. Actual use: **2 Gemini attempts / 2 Tavily attempts / 0 Twilio sends**, with no second submission, translation or fallback. See [sanitized actual result](live-website-acceptance-20261011.json). Private full API result and actual screenshot remain ignored in `.tmp/live-who-website.json` / `.tmp/live-who-website.png`.
+
+- **PASS: website rendering and grounded factual verdict.** HTTP 200, one anchored claim, `verified`, visible explanation and two eligible fetched WHO primary sources: `https://www.who.int/hongkongchina/about-us` and `https://www.who.int/about/governance/constitution`. Their actual passages establish 7 April 1948. No publication date was invented for either undated page.
+- **FAIL: strict complete-pipeline acceptance.** Status was `partial`, warning `source_page_unavailable:url_dns_error`. A contradiction-search Wikipedia result could not resolve through the local DNS path and was retained only as unreviewed `search_excerpt`. It was not eligible to establish the verdict and was excluded from concise verdict sources. This external fetch limitation is not proof the claim is false or an established backend extraction defect.
+- **PASS: rollback.** Only controlled 8002/3002 instances stopped. Ordinary provider-disabled 8000/3001 and isolated alerts 8001 continue; the owner's existing website, adapter, tunnel and encrypted WhatsApp state were preserved. Consuming worker remains paused.
+- **PASS offline: post-live presentation regression.** The detailed ledger explicitly labels unavailable search excerpts as non-decisive in EN/HI/MR. This corrects a presentation gap seen in the real result; no additional provider request was made to retest it.
+
+This newly approved result establishes only fresh text/website acceptance: factual verdict/rendering PASS, strict full pipeline FAIL (partial). Image, audio, PDF, URL full verification, translations and dynamic WhatsApp remain NOT TESTED or BLOCKED as documented. No ongoing blanket approval remains; further paid tests need new approval.

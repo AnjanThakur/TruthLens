@@ -2,6 +2,9 @@
 
 ## Latest full-system implementation (11 October 2026)
 
+**New approved live result:** one WHO text check through the actual website used **2 Gemini / 2 Tavily / 0 Twilio**. Grounded `verified` from two fetched WHO sources and website rendering **PASS**; strict complete-pipeline **FAIL** because a non-decisive Wikipedia page failed DNS resolution, leaving `status=partial`. No retry or second submission was made; controlled instances were stopped. See [actual result](../docs/live-website-acceptance-20261011.json). The pre-approval baseline and earlier records below are retained as history.
+
+
 **PASS:** 334 backend tests, Ruff (app/tests/scripts), mypy 47 files and pip check. Reviewed institution and contradiction investigation, safe page caching with original retrieval timestamps, original-message date context, quota/attempt ceilings and isolated encrypted alert persistence are implemented. Four deterministic before/after avoidable-abstention scenarios now resolve; guard decision remains mandatory. All six labels pass the independent 14-case fictional policy set (50% abstention), not a real-model accuracy benchmark. Exact original OpenAPI schemas/endpoints remain unchanged.
 
 **PASS:** actual safe WHO constitution URL extraction, HTTP 200 / 2,330 characters / explicit original date / no warnings; this spends no Gemini/Tavily credit and is not a factual verdict. **NOT TESTED:** fresh provider-backed five-format or website factual acceptance. Latest earlier audio record remains **FAIL**, transient-server transcription error; mocked 503 recovery and daily-quota fail-fast regressions pass. New phase usage **0 Gemini / 0 Tavily / 0 Twilio**.
