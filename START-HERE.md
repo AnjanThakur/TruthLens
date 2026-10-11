@@ -2,6 +2,8 @@
 
 This package contains the current website, Person 1 FastAPI backend and independent WhatsApp adapter. Start with this file, then [the completion handoff](docs/current-integration-handoff.md). You do not need the owner's laptop, Notepad files or private API keys to review the code and run the mocked tests.
 
+Integration update: `integration/person2-scam-intelligence` combines Person 2 with the scam-alert backend feature. Read [combined integration](docs/combined-integration.md) first for current validation, extra private alert-service configuration and the UI/chat consent work that is still pending. The original feature branches remain separate.
+
 ## Current status and ownership
 
 - Person 1: extraction, claims, search, evidence assessment, verification and grounded explanation. Start with the numbered Person 1 tasks in the completion handoff. Preserve existing contracts; coordinate any field/verdict changes.
@@ -108,6 +110,6 @@ Before consuming credits, sending live WhatsApp messages, changing accounts or p
 
 ## Working together
 
-Repository: https://github.com/AnjanThakur/TruthLens — branch `feature/person2-whatsapp`. The ZIP has no `.git` history and includes current uncommitted work. Do not initialize it and replace shared `main`; coordinate with the owner to push the feature branch, then clone that branch for normal collaboration. Instructions for the owner are in the completion handoff.
+Repository: https://github.com/AnjanThakur/TruthLens — combined branch `integration/person2-scam-intelligence`; Person 2 branch `feature/person2-whatsapp`. The ZIP has no `.git` history; check its manifest for the current branch/base commit and working-file snapshot. Do not initialize it and replace shared `main`; coordinate with the owner to push the chosen branch, then clone that branch for normal collaboration. Instructions for the owner are in the completion handoff.
 
 Send back a feature branch/PR, the tests you actually ran, and separate results for delivery, evidence quality and modality coverage. Keep API names stable and record any coordinated changes. Do not call an incomplete evidence result verified or false merely to make the demo look complete.

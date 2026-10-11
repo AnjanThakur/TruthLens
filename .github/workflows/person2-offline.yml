@@ -1,12 +1,30 @@
-name: Person 2 offline acceptance
+name: TruthLens integration offline acceptance
 on:
   push:
-    branches: [feature/person2-whatsapp]
+    branches: [feature/person2-whatsapp, integration/person2-scam-intelligence]
   pull_request:
-    paths: ['frontend/**', 'whatsapp-adapter/**', 'supabase/**', '.github/workflows/person2-offline.yml']
+    paths: ['frontend/**', 'whatsapp-adapter/**', 'supabase/**', 'backend/**', 'docs/scam-alert*', '.github/workflows/person2-offline.yml']
 permissions:
   contents: read
 jobs:
+  scam-alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      # Dedicated alert tests block live HTTP transports. This job does not
+      # claim full backend/native-media acceptance; see combined-integration.md.
+      - run: python -m pytest tests/test_alerts.py -q -p no:cacheprovider
+      - run: python -m ruff check app tests scripts
+      - run: python -m mypy app
+      - run: python -m pip check
   website:
     runs-on: ubuntu-latest
     timeout-minutes: 20
