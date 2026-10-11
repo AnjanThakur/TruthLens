@@ -90,5 +90,6 @@ foreach ($service in $Services) {
         }
         if (-not $ready) { throw "Startup health failed for $service. See the private sanitized logs; no existing process was stopped." }
     }
-    Write-Output "Started $service (PID $($process.Id)); providers default off, worker/outbound paused."
+    $providerNotice = if ($ControlledAcceptance) { 'controlled acceptance: 5 Gemini / 2 Tavily / 0 Twilio ceilings' } elseif ($EnableProviders) { 'providers explicitly enabled; worker/outbound paused' } else { 'providers off; worker/outbound paused' }
+    Write-Output "Started $service (PID $($process.Id)); $providerNotice."
 }

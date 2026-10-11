@@ -1,6 +1,6 @@
 import React from 'react';
 import { expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { Results } from '@/components/results';
 import { PreferencesProvider } from '@/components/preferences';
 import { relevantSources, warningText } from '@/lib/results';
@@ -39,4 +39,24 @@ it('renders invalid dates safely and explains partial processing without leaking
   expect(screen.getByText(/AI processing was unavailable/)).toBeInTheDocument();
   expect(screen.getAllByText('Date not provided').length).toBeGreaterThan(0);
   expect(warningText('source_page_unavailable:url_no_text', 'hi')).not.toContain('url_no_text');
+});
+it('labels unavailable search excerpts and excludes them from concise verdict sources', () => {
+  const report = structuredClone(fixtures[0].verification);
+  const claim = report.claims[0];
+  claim.evidence[0].excerpt_provenance = 'search_excerpt';
+  claim.evidence[0].source_type = 'other';
+  claim.evidence[0].stance = 'supports';
+  claim.evidence[0].directly_relevant = true;
+  claim.evidence[0].title = 'Unavailable publisher fixture';
+  report.claims = [claim];
+  render(
+    <PreferencesProvider>
+      <Results result={report} />
+    </PreferencesProvider>,
+  );
+  const ledger = screen.getByText(/Full retrieved evidence ledger/).closest('details')!;
+  expect(within(ledger).getByText(/Search excerpt only/)).toBeVisible();
+  expect(
+    relevantSources(claim).some((source) => source.excerpt_provenance === 'search_excerpt'),
+  ).toBe(false);
 });

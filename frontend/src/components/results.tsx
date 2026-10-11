@@ -283,6 +283,15 @@ export function Results({
                         <strong>{t.says}: </strong>
                         {evidence.what_source_says || '—'}
                       </p>
+                      {evidence.excerpt_provenance === 'search_excerpt' && (
+                        <p className="meta-line">
+                          {language === 'hi'
+                            ? 'केवल खोज का अंश उपलब्ध है। पूरा पृष्ठ नहीं पढ़ा जा सका; यह निर्णायक प्रमाण नहीं है।'
+                            : language === 'mr'
+                              ? 'फक्त शोधातील उतारा उपलब्ध आहे. संपूर्ण पृष्ठ वाचता आले नाही; हा निर्णायक पुरावा नाही.'
+                              : 'Search excerpt only. The full page could not be read; this is not decisive evidence.'}
+                        </p>
+                      )}
                       {evidence.excerpt && (
                         <details>
                           <summary>{t.excerpt}</summary>
