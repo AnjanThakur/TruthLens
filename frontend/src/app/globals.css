@@ -1504,3 +1504,37 @@ html[data-reading='easy'] .claim-card {
     scroll-behavior: auto !important;
   }
 }
+
+.alert-consent {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 18px 0;
+}
+.alert-consent label,
+.claim-card form label {
+  display: block;
+  margin: 12px 0;
+}
+.claim-card form input:not([type='checkbox']),
+.claim-card form textarea {
+  width: 100%;
+  max-width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+.claim-card form textarea {
+  min-height: 100px;
+}
+.evidence-section a,
+.alert-consent a {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .site-header nav {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+}

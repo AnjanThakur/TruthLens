@@ -15,7 +15,7 @@ class TruthLensClient:
             raise ServiceError("backend_disabled")
         if self.request_budget is not None:
             self.request_budget.reserve()
-        headers = {}
+        headers = kwargs.pop("headers", {})
         if self.settings.truthlens_backend_token.get_secret_value():
             headers["Authorization"] = (
                 f"Bearer {self.settings.truthlens_backend_token.get_secret_value()}"
@@ -42,7 +42,7 @@ class TruthLensClient:
         except (httpx.HTTPError, ValueError) as exc:
             raise ServiceError("backend_unavailable") from exc
 
-    async def verify(self, text, kind, language):
+    async def verify(self, text, kind, language, *, message_time=None):
         request = {
             "text": text,
             "input_type": kind,
@@ -54,7 +54,8 @@ class TruthLensClient:
         validate(request, "VerifyRequest")
         if len(text) > 24000:
             raise ServiceError("text_too_large")
-        result = await self.call("/api/verify", "VerificationResult", json=request)
+        headers = {"X-TruthLens-Message-Time": message_time} if message_time else {}
+        result = await self.call("/api/verify", "VerificationResult", json=request, headers=headers)
         if result["verification_id"].startswith("mock-") or any(
             "synthetic" in w.lower() for w in result["warnings"]
         ):

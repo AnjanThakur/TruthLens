@@ -48,13 +48,24 @@ export const jsonRequest = (value: unknown, signal?: AbortSignal): RequestInit =
   body: JSON.stringify(value),
   signal,
 });
-export async function verify(input: VerifyRequest, signal: AbortSignal) {
+export async function verify(input: VerifyRequest, signal: AbortSignal, messageTime?: string) {
   const { verificationSchema } = await import('./contracts');
   let receipt: string | null = null;
   const result = requireCompleted(
-    await request('/api/verify', verificationSchema, jsonRequest(input, signal), (response) => {
-      receipt = response.headers.get('X-TruthLens-Receipt');
-    }),
+    await request(
+      '/api/verify',
+      verificationSchema,
+      {
+        ...jsonRequest(input, signal),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(messageTime ? { 'X-TruthLens-Message-Time': messageTime } : {}),
+        },
+      },
+      (response) => {
+        receipt = response.headers.get('X-TruthLens-Receipt');
+      },
+    ),
   );
   return { result, receipt };
 }

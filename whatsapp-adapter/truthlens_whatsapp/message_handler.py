@@ -1,5 +1,6 @@
 import re
 import time
+from datetime import UTC, datetime
 from urllib.parse import urlsplit
 
 from .errors import ServiceError
@@ -39,9 +40,18 @@ class MessageHandler:
                 )
                 + "HINDI | MARATHI | ENGLISH | SOURCES | STOP"
             ], None
+        language = self.store.preference(sender)["language"]
+        if command in LANGUAGES and self.settings.response_mode == "development":
+            self.store.preference(sender, LANGUAGES[command])
+            return [
+                "Preference updated. Development connectivity mode does not perform fact checks."
+            ], None
+        if command == "SOURCES" and self.settings.response_mode == "development":
+            return [
+                "Development connectivity mode has no fact-check sources. Use the website for a check."
+            ], None
         if self.settings.response_mode == "development":
             return [DEVELOPMENT], None
-        language = self.store.preference(sender)["language"]
         if command in LANGUAGES or command == "SOURCES":
             if command in LANGUAGES:
                 language = LANGUAGES[command]
@@ -99,7 +109,12 @@ class MessageHandler:
                 )
         if not text.strip():
             raise ServiceError("extraction_empty")
-        result = await self.backend.verify(text, kind, language)
+        result = await self.backend.verify(
+            text,
+            kind,
+            language,
+            message_time=datetime.fromtimestamp(int(message["timestamp"]), UTC).isoformat(),
+        )
         return format_reports([result], extraction_warnings=warnings), {
             "reports": [result],
             "warnings": warnings,

@@ -66,6 +66,32 @@ describe('live proxy isolation and errors', () => {
     expect(String(fetch.mock.calls[0][0])).toBe('http://p1.test/api/verify');
     expect(response.headers.get('Cache-Control')).toContain('no-store');
   });
+  it('forwards original message time without changing the body contract', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () => Response.json(backendResult()));
+    vi.stubGlobal('fetch', fetch);
+    const request = req('/api/verify', input);
+    request.headers.set('X-TruthLens-Message-Time', '2026-10-04T22:00:00+05:30');
+    expect((await verifyRoute(request)).status).toBe(200);
+    const options = fetch.mock.calls[0][1]!;
+    expect(new Headers(options.headers).get('X-TruthLens-Message-Time')).toBe(
+      '2026-10-04T22:00:00+05:30',
+    );
+    expect(JSON.parse(String(options.body))).toEqual({
+      ...input,
+      input_language: 'auto',
+      response_language: 'en',
+      audience: 'adult',
+      jurisdiction: 'IN',
+    });
+  });
+  it('rejects timezone-less original message time before provider calls', async () => {
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    const request = req('/api/verify', input);
+    request.headers.set('X-TruthLens-Message-Time', '2026-10-04T22:00:00');
+    expect((await verifyRoute(request)).status).toBe(400);
+    expect(fetch).not.toHaveBeenCalled();
+  });
   it('rejects synthetic data returned by a live upstream', async () => {
     vi.stubGlobal(
       'fetch',

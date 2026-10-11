@@ -1,11 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
+const port = process.env.PLAYWRIGHT_PORT || '3000';
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
   workers: 1,
   timeout: 60000,
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: `http://localhost:${port}`,
     channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge',
     trace: 'retain-on-failure',
   },
@@ -24,8 +25,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev:mock -- --hostname 127.0.0.1',
-    url: 'http://localhost:3000',
+    command: `npm run dev:mock -- --hostname 127.0.0.1 --port ${port}`,
+    url: `http://localhost:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

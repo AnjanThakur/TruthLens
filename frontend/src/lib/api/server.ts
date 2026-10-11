@@ -70,8 +70,9 @@ export async function upstream<T>(
   path: string,
   schema: z.ZodType<T>,
   init?: RequestInit,
+  connection?: { base: string; token: string; timeout: number },
 ): Promise<T> {
-  const base = process.env.BACKEND_BASE_URL;
+  const base = connection?.base ?? process.env.BACKEND_BASE_URL;
   if (!base) throw new ApiError('NOT_CONFIGURED', errorMessage('NOT_CONFIGURED'), 503);
   let url: URL;
   try {
@@ -79,7 +80,7 @@ export async function upstream<T>(
   } catch {
     throw new ApiError('NOT_CONFIGURED', errorMessage('NOT_CONFIGURED'), 503);
   }
-  const timeout = backendTimeout(process.env.BACKEND_TIMEOUT_MS);
+  const timeout = connection?.timeout ?? backendTimeout(process.env.BACKEND_TIMEOUT_MS);
   if (
     !['http:', 'https:'].includes(url.protocol) ||
     url.username ||
@@ -97,8 +98,8 @@ export async function upstream<T>(
       redirect: 'error',
       headers: {
         ...Object.fromEntries(new Headers(init?.headers).entries()),
-        ...(process.env.BACKEND_API_TOKEN
-          ? { Authorization: `Bearer ${process.env.BACKEND_API_TOKEN}` }
+        ...((connection?.token ?? process.env.BACKEND_API_TOKEN)
+          ? { Authorization: `Bearer ${connection?.token ?? process.env.BACKEND_API_TOKEN}` }
           : {}),
       },
       signal: init?.signal
@@ -112,15 +113,19 @@ export async function upstream<T>(
   }
   if (!response.ok) {
     const code =
-      response.status === 429
-        ? 'RATE_LIMIT'
-        : response.status === 413
-          ? 'UPLOAD_TOO_LARGE'
-          : response.status === 415
-            ? 'UNSUPPORTED_FILE'
-            : response.status >= 500
-              ? 'BACKEND_OFFLINE'
-              : 'BAD_INPUT';
+      response.status === 409
+        ? 'ALERT_CONFLICT'
+        : response.status === 403
+          ? 'FORBIDDEN'
+          : response.status === 429
+            ? 'RATE_LIMIT'
+            : response.status === 413
+              ? 'UPLOAD_TOO_LARGE'
+              : response.status === 415
+                ? 'UNSUPPORTED_FILE'
+                : response.status >= 500
+                  ? 'BACKEND_OFFLINE'
+                  : 'BAD_INPUT';
     throw new ApiError(code, errorMessage(code), response.status);
   }
   const reader = response.body?.getReader();

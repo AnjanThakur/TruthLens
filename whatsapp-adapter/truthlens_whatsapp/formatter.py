@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 LABELS = {
     "en": {
         "verified": "Verified",
@@ -56,18 +58,45 @@ def format_reports(reports, *, extraction_warnings=None, sources_only=False):
         language = result["response_language"]
         if result["status"] == "partial":
             lines.append("PARTIAL CHECK: some processing or evidence retrieval was incomplete.")
-        lines += [result["summary"], f"Checked: {result['checked_at']}"]
+        try:
+            checked = (
+                datetime.fromisoformat(result["checked_at"].replace("Z", "+00:00"))
+                .astimezone(timezone(timedelta(hours=5, minutes=30)))
+                .strftime("%d %b %Y, %H:%M IST")
+            )
+        except (ValueError, TypeError):
+            checked = "Date not established"
+        lines.append(f"Checked: {checked}")
         for index, claim in enumerate(result["claims"], 1):
             lines += [
                 f"Claim {index}: {claim['claim_text']}",
                 f"Verdict: {LABELS[language][claim['verdict']]}",
             ]
             if not sources_only:
-                lines += [claim["explanation"], claim["next_step"]]
-            evidence = claim["evidence"] if sources_only else claim["evidence"][:3]
+                lines += [claim["explanation"][:1000], claim["next_step"][:350]]
+            relevant = [
+                source
+                for source in claim["evidence"]
+                if source.get("directly_relevant")
+                and source.get("source_type") in {"primary", "secondary", "fact_check"}
+                and "incomplete_content:" not in source.get("authority_basis", "")
+                and source.get("excerpt_provenance") == "fetched_page"
+                and source["stance"] in {"supports", "contradicts", "context"}
+            ]
+            evidence = claim["evidence"] if sources_only else relevant[:3]
+            if not sources_only and not evidence:
+                # An unassessed retrieval is explicitly separated from verdict evidence.
+                evidence = [
+                    source for source in claim["evidence"] if source["stance"] == "unclear"
+                ][:1]
             for source in evidence:
+                label = (
+                    f"Source ({source['stance']})"
+                    if source in relevant
+                    else "Unassessed retrieved link (not verdict evidence)"
+                )
                 lines += [
-                    f"Source ({source['stance']}): {source['publisher']} — {source['title']}",
+                    f"{label}: {source['publisher']} — {source['title']}",
                     source["url"],
                 ]
             if not evidence:
@@ -76,8 +105,18 @@ def format_reports(reports, *, extraction_warnings=None, sources_only=False):
                 )
             if not sources_only and len(claim["evidence"]) > 3:
                 lines.append("Reply SOURCES for remaining evidence, including other stances.")
-            lines += [f"Limit: {item}" for item in claim["limitations"]]
-        lines += [f"Warning: {item}" for item in result["warnings"]]
-    lines += [f"Extraction warning: {item}" for item in (extraction_warnings or [])]
+            lines += [f"Limit: {item}" for item in claim["limitations"][:2]]
+        if result["warnings"]:
+            lines.append(
+                {
+                    "en": "Some processing could not complete. An unassessed claim has no definitive verdict; try again later.",
+                    "hi": "कुछ प्रक्रिया अधूरी रही। बिना मूल्यांकन का दावा निर्णायक नहीं है; बाद में प्रयास करें।",
+                    "mr": "काही प्रक्रिया अपूर्ण राहिली. मूल्यांकन न झालेल्या दाव्याचा निर्णायक निष्कर्ष नाही; नंतर प्रयत्न करा.",
+                }[language]
+            )
+    if extraction_warnings:
+        lines.append(
+            "Extraction was incomplete. Review the visible extracted text on the website before relying on a whole-document check."
+        )
     lines.append("HELP | SOURCES | HINDI | MARATHI | ENGLISH | STOP")
     return split_text("\n".join(lines))

@@ -1,3 +1,6 @@
+import copy
+from uuid import uuid4
+
 import httpx
 import pytest
 
@@ -98,6 +101,10 @@ async def test_reply_attempt_cap_leaves_remaining_parts_unsent(settings, store, 
     settings.meta_outbound_enabled = True
     report["claims"][0]["explanation"] = "Offline fixture explanation. " * 80
     report["summary"] = "Offline fixture summary. " * 200
+    # The concise formatter no longer repeats a long overall summary. Exercise
+    # the send cap with a genuinely multi-claim report, keeping the assertions.
+    original = report["claims"][0]
+    report["claims"] = [dict(copy.deepcopy(original), claim_id=str(uuid4())) for _ in range(5)]
     store.enqueue([message])
     calls = []
 

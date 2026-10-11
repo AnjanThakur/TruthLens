@@ -21,6 +21,7 @@ import {
 import { z } from 'zod';
 import { usePreferences } from './preferences';
 import { Results } from './results';
+import { AlertContribution } from './alert-contribution';
 import { fixtures } from '@/lib/fixtures';
 import { extractFile, extractUrl, verify, explain, request, jsonRequest } from '@/lib/api/client';
 import {
@@ -104,11 +105,13 @@ function Preview({ file, kind }: { file: File; kind: InputType }) {
 export function VerificationWorkspace({
   mock,
   historyEnabled,
+  alertsEnabled = false,
   whatsappUrl,
   maxUploadBytes = MAX_UPLOAD_BYTES,
 }: {
   mock: boolean;
   historyEnabled: boolean;
+  alertsEnabled?: boolean;
   whatsappUrl?: string | null;
   maxUploadBytes?: number;
 }) {
@@ -130,6 +133,7 @@ export function VerificationWorkspace({
   const [reviewText, setReviewText] = useState('');
   const [result, setResult] = useState<Verification | null>(null);
   const [receipt, setReceipt] = useState<string | null>(null);
+  const [messageTime, setMessageTime] = useState('');
   const [error, setError] = useState('');
   const [selectedFixture, setSelectedFixture] = useState(0);
   const [explanation, setExplanation] = useState<Explanation | null>(null);
@@ -183,6 +187,7 @@ export function VerificationWorkspace({
   function changeType(next: InputType) {
     if (busy) return;
     setType(next);
+    setMessageTime('');
     setFile(null);
     setExtraction(null);
     setReviewText('');
@@ -271,7 +276,11 @@ export function VerificationWorkspace({
           jurisdiction: 'IN',
         });
         setPhase('verifying');
-        const verified = await verify(input, abort.signal);
+        const verified = await verify(
+          input,
+          abort.signal,
+          messageTime ? new Date(messageTime).toISOString() : undefined,
+        );
         if (abort.signal.aborted) return;
         setResult(verified.result);
         setReceipt(verified.receipt);
@@ -468,8 +477,32 @@ export function VerificationWorkspace({
                       aria-describedby="privacy-note text-count"
                     />
                     <span className="character-count" id="text-count">
-                      {text.length.toLocaleString()} / 30,000
+                      {text.length.toLocaleString()} / 24,000
                     </span>
+                    <label htmlFor="message-time">
+                      {language === 'hi'
+                        ? 'मूल संदेश का समय (वैकल्पिक)'
+                        : language === 'mr'
+                          ? 'मूळ संदेशाची वेळ (पर्यायी)'
+                          : 'Original message time (optional, your local timezone)'}
+                    </label>
+                    <input
+                      id="message-time"
+                      type="datetime-local"
+                      value={messageTime}
+                      disabled={busy}
+                      onChange={(event) => {
+                        setMessageTime(event.target.value);
+                        clearResult();
+                      }}
+                    />
+                    <p className="meta-line">
+                      {language === 'en'
+                        ? 'Helps interpret “tomorrow” or “next Monday”. If unknown, relative dates use the time of this check.'
+                        : language === 'hi'
+                          ? '“अगले सोमवार” का अर्थ स्पष्ट करता है। समय न मिलने पर जाँच के समय का उपयोग होता है।'
+                          : '“पुढील सोमवार”चा अर्थ स्पष्ट होतो. मूळ वेळ माहीत नसल्यास तपासणीची वेळ वापरली जाते.'}
+                    </p>
                   </>
                 )}
                 {type === 'url' && (
@@ -753,6 +786,9 @@ export function VerificationWorkspace({
                 </>
               )}
               {saveStatus && <p role="status">{saveStatus}</p>}
+              {alertsEnabled && receipt && !mock && (
+                <AlertContribution key={result.verification_id} result={result} receipt={receipt} />
+              )}
             </section>
           )}
         </div>
