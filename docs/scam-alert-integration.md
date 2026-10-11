@@ -1,5 +1,18 @@
 # Scam Alert Intelligence: Person 2 handoff
 
+## Current integrated implementation (11 October 2026)
+
+The website now provides explicit signed-report contribution consent, withdrawal and authenticated role-gated `/alerts` review with manual draft creation/edit/submit/approve/reject. Role identity and stable source/submission pseudonyms are derived server-side, not accepted from the browser. Configure server-only `ALERTS_BASE_URL`, `ALERTS_INGEST_TOKEN`, `ALERTS_ADMIN_TOKEN`, and stable `ALERTS_SOURCE_SECRET`, alongside existing Supabase/history settings. The Windows runner shares these privately between the website and isolated alert service.
+
+New additive migration `supabase/migrations/202610110003_alert_reviewers.sql` creates only a reviewer role allowlist; existing Person 2 report tables are untouched. A project administrator must apply it and grant selected existing auth users. The hosted read-only preflight returned **404/PGRST205**; authenticated review is blocked until that action and a real session check. Ordinary authenticated users have read-own-role only and cannot self-grant roles.
+
+Set paired `ALERTS_DATABASE_PATH` and `ALERTS_ENCRYPTION_KEY` for the new encrypted SQLite repository; preserve the original key across restarts/backups. Memory remains the unconfigured/default test implementation. Local durable storage is separate from WhatsApp and Supabase history. BEGIN IMMEDIATE transactions serialize repository instances; ciphertext stores minimized redacted observations, drafts and receipts. New persistence regressions cover restart/withdrawal, rollback, wrong keys and concurrent instances.
+
+The single-process website serializes contribution/withdrawal per authenticated principal with bounded waiting. Multi-replica integration requires distributed serialization/tombstones before deployment. Cross-language matching remains conservative for the existing supported narrative catalogue and optional local embedder. Alerts are never automatically published or sent; approval only retains a reviewed candidate. This functionality is source/offline/local PASS, not a claim of hosted authenticated acceptance. See [full-system acceptance](final-full-system-acceptance.md) and [Windows startup](windows-startup.md).
+
+The earlier service-only handoff below is historical where it describes missing website integration or memory-only operation.
+
+
 This feature consumes **already fact-checked, explicitly consented claim records** and prepares reviewable alert drafts. It observes this retained submission sample only. It neither monitors WhatsApp globally nor publishes messages. No Gemini, Tavily, Meta or Supabase calls are made by the default alert engine.
 
 ## Isolation and compatibility

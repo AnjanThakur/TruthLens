@@ -1,5 +1,8 @@
 # TruthLens collaborator handoff — 2026-10-11
 
+> **Current implementation update (11 October 2026):** the full feature implementation and current test/live boundaries are recorded in [full-system acceptance](final-full-system-acceptance.md), with [Windows startup](windows-startup.md). Earlier counts and pending UI statements below are historical. Current offline checks: backend 334, adapter 137, frontend 52, browser 24 and production proxy 6; all passed. Fresh provider-backed acceptance needs new approval; dynamic WhatsApp remains blocked by the trial account.
+
+
 Repository: https://github.com/AnjanThakur/TruthLens
 
 **Combined integration update:** Person 2 was saved as local commit `c88900c`, then combined with scam-alert commit `50350b4` on `integration/person2-scam-intelligence` without conflicts. At the owner's request, the existing `feature/scam-alert-intelligence` was then fast-forwarded to contain both features and is now the delivery branch. Main remains unchanged. See [combined integration](combined-integration.md) for tests, setup and remaining alert UI/chat work. Older Person 2-specific branch references below are historical; use the existing scam branch for sharing both features.

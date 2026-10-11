@@ -1,5 +1,8 @@
 # TruthLens AI
 
+> **Current implementation update (11 October 2026):** the full feature implementation and current test/live boundaries are recorded in [full-system acceptance](docs/final-full-system-acceptance.md), with [Windows startup](docs/windows-startup.md). Earlier counts and pending UI statements below are historical. Current offline checks: backend 334, adapter 137, frontend 52, browser 24 and production proxy 6; all passed. Fresh provider-backed acceptance needs new approval; dynamic WhatsApp remains blocked by the trial account.
+
+
 Person 2's Next.js application for reviewing forwarded claims, original evidence and honest uncertainty. The original Word execution plan in `TruthLens_Person2_Codex_Package` is the primary authority. Person 1's AI/backend code is intentionally a separate service.
 
 Current collaborator handoff: [remaining work, APIs, private configuration and startup](docs/current-integration-handoff.md). Read it before older gate reports, which include historical blockers.

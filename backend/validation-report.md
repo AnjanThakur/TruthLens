@@ -1,5 +1,14 @@
 # Backend implementation and validation record
 
+## Latest full-system implementation (11 October 2026)
+
+**PASS:** 334 backend tests, Ruff (app/tests/scripts), mypy 47 files and pip check. Reviewed institution and contradiction investigation, safe page caching with original retrieval timestamps, original-message date context, quota/attempt ceilings and isolated encrypted alert persistence are implemented. Four deterministic before/after avoidable-abstention scenarios now resolve; guard decision remains mandatory. All six labels pass the independent 14-case fictional policy set (50% abstention), not a real-model accuracy benchmark. Exact original OpenAPI schemas/endpoints remain unchanged.
+
+**PASS:** actual safe WHO constitution URL extraction, HTTP 200 / 2,330 characters / explicit original date / no warnings; this spends no Gemini/Tavily credit and is not a factual verdict. **NOT TESTED:** fresh provider-backed five-format or website factual acceptance. Latest earlier audio record remains **FAIL**, transient-server transcription error; mocked 503 recovery and daily-quota fail-fast regressions pass. New phase usage **0 Gemini / 0 Tavily / 0 Twilio**.
+
+See [actual full-system report](../docs/final-full-system-acceptance.md), [startup and selective acceptance](../docs/windows-startup.md), and [avoidable comparison](evaluation/avoidable-results.json). Hosted reviewer table is **BLOCKED** (404/PGRST205); authenticated Supabase history/alerts are not claimed live PASS. The sections below retain earlier run evidence and counts for historical context.
+
+
 Repair runs: **11 October 2026**, Windows PowerShell, Python **3.14.7**. Only `backend/` and `docs/` are in scope. Frontend, Person 2's database and WhatsApp were not changed.
 
 **Final Person 1 status: READY WITH BLOCKERS.** Code and offline quality gates pass. Existing text/image/PDF/URL workflow acceptance is preserved. Final live audio failed with Gemini HTTP 503, so live audio recovery and decisive-verdict accuracy remain unvalidated. Final-pass consumption: **one Gemini attempt, zero Tavily searches**, within the hard five/two ceilings. Remaining live work stopped immediately; no extra credits were requested.

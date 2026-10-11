@@ -6,6 +6,6 @@
 4. Person 1 contract/OpenAPI: actual wire schemas, protected by client contract tests.
 5. Supplementary master handoff and explicitly fictional UI fixtures.
 
-P2 owns the website, consent-aware history, API consumers, standalone connector, Meta configuration preparation, deployment preparation and QA. P1 owns every extraction, verification and explanation engine. The approved WhatsApp reassignment replaces the original optional P1-webhook/P2-setup split; it authorizes no changes to P1 backend code.
+P2 owns the website, consent-aware history, API consumers, standalone connector, Meta configuration preparation, deployment preparation and QA. P1 owns every extraction, verification and explanation engine. The approved WhatsApp reassignment replaced the original optional P1-webhook/P2-setup split. The owner's later full-system implementation task explicitly authorizes coordinated backend, website and adapter changes while preserving their existing contracts and private state.
 
 Account actions, real WhatsApp sends, paid provider tests and production publication need separate owner approval. Provider-key rotation must be confirmed first. No silent schema/verdict changes or fabricated checks. See whatsapp-gates.md for actual acceptance.
