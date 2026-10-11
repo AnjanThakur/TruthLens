@@ -8,7 +8,8 @@ from uuid import UUID
 
 import httpx
 
-from .errors import AmbiguousSend, ServiceError
+from .errors import ServiceError, TwilioSendError, TwilioUncertainSend
+from .formatter import DEVELOPMENT
 from .meta_client import MIMES, retry_after
 
 
@@ -96,37 +97,72 @@ class TwilioClient:
     async def send(self, to, body, callback):
         self.enabled()
         if not re.fullmatch(r"[1-9][0-9]{5,14}", to) or len(body.encode("utf-16-le")) // 2 > 1500:
-            raise ServiceError("twilio_rejected")
-        if str(UUID(callback)) != callback:
-            raise ServiceError("twilio_rejected")
+            raise TwilioSendError("twilio_rejected")
+        try:
+            if str(UUID(callback)) != callback:
+                raise ValueError
+        except (ValueError, TypeError, AttributeError):
+            raise TwilioSendError("twilio_rejected") from None
+        data = {
+            "From": self.settings.twilio_whatsapp_number,
+            "To": f"whatsapp:+{to}",
+            "StatusCallback": f"{self.settings.twilio_public_base_url}/webhook/twilio/status/{callback}",
+        }
+        content_sid = self.settings.twilio_development_content_sid
+        if content_sid:
+            # A supplied trial template proves connectivity only. Never substitute
+            # it for a fact-check, command acknowledgement or provider-error reply.
+            if (
+                self.settings.bot_env != "test"
+                or self.settings.response_mode != "development"
+                or self.settings.backend_enabled
+                or body != DEVELOPMENT
+                or not re.fullmatch(r"HX[0-9a-fA-F]{32}", content_sid)
+            ):
+                raise TwilioSendError("twilio_template_only")
+            data["ContentSid"] = content_sid
+        else:
+            data["Body"] = body
         try:
             response = await self.client.post(
                 f"{self.base}/Messages.json",
                 auth=self.auth,
-                data={
-                    "From": self.settings.twilio_whatsapp_number,
-                    "To": f"whatsapp:+{to}",
-                    "Body": body,
-                    "StatusCallback": f"{self.settings.twilio_public_base_url}/webhook/twilio/status/{callback}",
-                },
+                data=data,
                 timeout=20,
                 follow_redirects=False,
             )
-        except httpx.HTTPError as exc:
-            raise AmbiguousSend("send_uncertain") from exc
-        if response.status_code == 429:
-            raise ServiceError("twilio_rate_limit", retry_after=retry_after(response) or 60)
-        if response.status_code >= 500:
-            raise AmbiguousSend("send_uncertain")
-        if not response.is_success:
-            raise ServiceError("twilio_rejected")
+        except httpx.HTTPError:
+            # HTTP exceptions may retain authorization headers and message bodies.
+            raise TwilioUncertainSend("send_uncertain") from None
+        result = {}
         try:
-            sid = response.json()["sid"]
+            if len(response.content) <= 65536:
+                decoded = response.json()
+                if isinstance(decoded, dict):
+                    result = decoded
+        except (ValueError, TypeError):
+            pass
+        diagnostics = {
+            "http_status": response.status_code,
+            "twilio_error_code": result.get("code") or result.get("error_code"),
+        }
+        if response.status_code == 429:
+            raise TwilioSendError(
+                "twilio_rate_limit", retry_after=retry_after(response) or 60, **diagnostics
+            )
+        if response.status_code >= 500:
+            raise TwilioUncertainSend("send_uncertain", **diagnostics)
+        if not response.is_success:
+            raise TwilioSendError("twilio_rejected", **diagnostics)
+        if result.get("status") in ("failed", "undelivered"):
+            raise TwilioSendError("twilio_rejected", **diagnostics)
+        try:
+            sid = result["sid"]
             if not isinstance(sid, str) or not re.fullmatch(r"(?:SM|MM)[0-9a-fA-F]{32}", sid):
                 raise ValueError
             return f"twilio:{sid}"
-        except (KeyError, TypeError, ValueError) as exc:
-            raise AmbiguousSend("send_uncertain") from exc
+        except (KeyError, TypeError, ValueError):
+            raise TwilioUncertainSend("send_uncertain", **diagnostics) from None
 
     async def media(self, path, kind):
         self.enabled()

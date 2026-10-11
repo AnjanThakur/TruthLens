@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     twilio_auth_token: SecretStr = SecretStr("")
     twilio_whatsapp_number: str = ""
     twilio_public_base_url: str = ""
+    twilio_development_content_sid: str = ""
     whatsapp_access_token: SecretStr = SecretStr("")
     whatsapp_phone_number_id: str = ""
     whatsapp_waba_id: str = ""
@@ -86,6 +87,13 @@ class Settings(BaseSettings):
             ):
                 raise ValueError("Configure the exact HTTPS tunnel origin without a path")
             self.twilio_public_base_url = self.twilio_public_base_url.rstrip("/")
+            if self.twilio_development_content_sid:
+                if not re.fullmatch(r"HX[0-9a-fA-F]{32}", self.twilio_development_content_sid):
+                    raise ValueError("Configure the actual Twilio-provided Content SID")
+                if self.response_mode != "development" or self.backend_enabled:
+                    raise ValueError(
+                        "Trial templates are only for development with backend disabled"
+                    )
         if len(self.identity_hash_secret.get_secret_value()) < 32:
             raise ValueError("Configure a stable identity hashing secret of at least 32 characters")
         if not self.state_encryption_key.get_secret_value():

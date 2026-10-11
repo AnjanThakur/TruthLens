@@ -6,7 +6,7 @@ import time
 import httpx
 
 from .config import load_settings
-from .errors import AmbiguousSend, ServiceError
+from .errors import AmbiguousSend, ServiceError, TwilioSendError
 from .message_handler import MessageHandler
 from .meta_client import MetaClient
 from .store import Store
@@ -87,17 +87,32 @@ class Worker:
                 message["from"], self.store.open(item["body"]), item["id"]
             )
             self.store.send_state(item["id"], "accepted", meta_id)
-        except AmbiguousSend:
+            outcome = "accepted"
+        except AmbiguousSend as exc:
             self.store.send_state(item["id"], "uncertain")
+            outcome = "uncertain"
+            self.log_send_diagnostics(exc)
         except ServiceError as exc:
             if exc.code in {"meta_rate_limit", "twilio_rate_limit"} and item["attempts"] < 2:
                 self.store.send_state(item["id"], "prepared", delay=exc.retry_after or 60)
+                outcome = "retry_scheduled"
             else:
                 self.store.send_state(item["id"], "failed")
+                outcome = "failed"
+            self.log_send_diagnostics(exc)
         except Exception:
             self.store.send_state(item["id"], "uncertain")
-        log.info("stage=send_attempt outbox=%s", item["id"])
+            outcome = "uncertain"
+        log.info("stage=send_attempt outbox=%s outcome=%s", item["id"], outcome)
         return True
+
+    def log_send_diagnostics(self, error):
+        if self.settings.messaging_provider == "twilio" and isinstance(error, TwilioSendError):
+            log.warning(
+                "stage=twilio_send_error http_status=%s twilio_error_code=%s",
+                error.http_status,
+                error.twilio_error_code,
+            )
 
 
 async def run():

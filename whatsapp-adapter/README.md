@@ -4,7 +4,50 @@ Person 2's isolated Meta Cloud API transport. Person 1's FastAPI remains the onl
 
 **Current status: implemented and tested offline; actual Meta delivery and live backend fact-checking are not yet demonstrated.** Account actions, real WhatsApp sends, provider credits and production publication require the owner's approval. All automated tests use mocked HTTP. Do not interpret a mocked verdict as a factual finding.
 
-An additional **Twilio Sandbox test connector** is available while the owner's Meta test WABA is restricted. It preserves this Meta adapter and reuses the same queue and Person 1 API client. See [Twilio setup](../docs/twilio-sandbox-setup.md) for the separate private configuration, signatures, trial limits and explicit live-test gates. It is not a Channel integration; real Twilio delivery is not yet demonstrated. Install optional `.[twilio]` dependencies when using it.
+An additional **Twilio Sandbox test connector** is available while the owner's Meta test WABA is restricted. It preserves this Meta adapter and reuses the same queue and Person 1 API client. See [Twilio setup](../docs/twilio-sandbox-setup.md) for the separate private configuration, signatures, trial limits and explicit live-test gates. It is not a Channel integration. Real Twilio trial-template delivery was confirmed on 11 October 2026 by the signed callback and owner phone receipt; see the current debugging record below. Install optional `.[twilio]` dependencies when using it.
+
+## Current outbound debugging (11 October 2026, Dell checkout)
+
+See [outbound validation report](outbound-validation-report.md). Twilio rejection logs now
+retain only the HTTP status and numeric error code, for example
+`stage=twilio_send_error http_status=400 twilio_error_code=63016` (an offline fixture,
+not an observed live send). Worker logs also distinguish failed, uncertain and accepted
+attempts. Neither provider messages nor API response bodies are logged.
+
+The single approved **fresh development-mode** test returned HTTP **400**, numeric
+Twilio error **21654 (ContentSid Required)**, with no outbound message SID. The old
+failed outbox was preserved. No reply was delivered, and no AI calls were made.
+
+After the owner supplied the actual ContentSid and separately approved one fresh
+template test, the request returned HTTP **201**, with **delivered** confirmed by
+Twilio's message API and the signature-validated callback. The owner confirmed
+receipt on their phone. This second test used one send attempt and zero AI calls;
+both failed outbox rows were preserved. The chosen Twilio trial template was delivered.
+
+The worker remains paused. Do not
+restart the unrestricted worker or reset/retry the old failed outbox row. Keep
+`RESPONSE_MODE=development` and `BACKEND_ENABLED=false`; the selected-message runner
+must use `--max-backend-requests 0 --max-send-attempts 1`. Existing failed/completed
+jobs are not replayed. HTTP acceptance alone is not proof of phone delivery.
+
+An optional `TWILIO_DEVELOPMENT_CONTENT_SID` now supports this account's supplied
+trial template. Copy the actual HX SID from Console → Try out WhatsApp into the
+private `.env.twilio`; never use an invented/example SID. Template API reads returned
+401/20003, so the actual SID could not be retrieved automatically. The owner has
+since supplied it; it is saved privately, and format/development gates and the
+outgoing template request passed offline validation. Its actual acceptance and
+delivery subsequently passed the separately approved live test above. Only the fixed
+development connectivity reply uses this path; fact-checks, STOP/START/HELP replies
+and provider-error replies are never replaced with template content. The request
+sends `ContentSid`, without `Body` or `ContentVariables`, retaining authentication
+and the signed status callback. The phone receives Twilio's supplied template,
+not the custom TruthLens development text or a factual result.
+
+No automatic fallback or old-item retry was attempted. Each of the two live attempts
+had separate single-send approval; both approvals are exhausted. Another send needs
+new approval. One additional fresh HI was left unprocessed, and the worker remains
+paused. Current validation: **132
+offline tests**, Ruff and dependency checks pass.
 
 ## Install and run offline
 
