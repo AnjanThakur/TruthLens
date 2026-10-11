@@ -125,6 +125,15 @@ export function Results({
         </p>
       )}
       <p className="result-summary">{displayedSummary}</p>
+      {result.status === 'partial' && (
+        <p className="notice" role="status">
+          {language === 'hi'
+            ? 'आंशिक जाँच: कुछ प्रमाण या प्रसंस्करण अधूरा है। चेतावनियाँ देखें।'
+            : language === 'mr'
+              ? 'अंशतः तपासणी: काही पुरावे किंवा प्रक्रिया अपूर्ण आहे. सूचना वाचा.'
+              : 'Partial check: some evidence or processing was incomplete. Review the warnings and limitations.'}
+        </p>
+      )}
       <p className="meta-line">
         {t.checked}{' '}
         <time dateTime={result.checked_at}>
@@ -205,16 +214,16 @@ export function Results({
                 {rewritten?.short_summary ?? claim.short_summary}
               </p>
               <p dir="auto">{rewritten?.explanation ?? claim.explanation}</p>
-              {claim.temporal_context && (
+              {claim.temporal_context.notes && (
                 <p>
                   <strong>{t.temporal}: </strong>
-                  {claim.temporal_context}
+                  {claim.temporal_context.notes}
                 </p>
               )}
-              {claim.original_context && (
+              {claim.original_context.notes && (
                 <p>
                   <strong>{t.context}: </strong>
-                  {claim.original_context}
+                  {claim.original_context.notes}
                 </p>
               )}
               <div className="evidence-section">

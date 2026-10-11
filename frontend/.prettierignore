@@ -4,3 +4,4 @@ test-results
 playwright-report
 package-lock.json
 src/lib/fixtures/synthetic.json
+next-env.d.ts

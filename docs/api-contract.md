@@ -1,3 +1,5 @@
+> Historical provisional contract. Superseded for HTTP schemas by backend-api-contract.md, backend-openapi.json and person2-contract-reconciliation.md.
+
 # TruthLens shared API contract
 
 Version: 0.1 PROVISIONAL — awaiting Person 1 confirmation. Primary authority: `TruthLens_PS_Aligned_Two_Developer_Plan.docx`. The supplementary handoff clarifies implementation, but does not override the Word plan. No Person 1 code is included here.

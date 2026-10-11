@@ -129,7 +129,7 @@ describe('live proxy isolation and errors', () => {
     expect(
       (
         await explainRoute(
-          req('/api/explain', { verification: backendResult(), language: 'hi', audience: 'easy' }),
+          req('/api/explain', { result: backendResult(), language: 'hi', audience: 'senior' }),
         )
       ).status,
     ).toBe(502);

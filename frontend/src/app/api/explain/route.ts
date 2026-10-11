@@ -20,8 +20,8 @@ export function POST(request: Request) {
       body: JSON.stringify(input),
       signal: request.signal,
     });
-    if (result.language !== input.language || result.audience !== input.audience)
+    if (result.response_language !== input.language || result.audience !== input.audience)
       throw new ApiError('BAD_RESPONSE', 'Explanation mismatch.', 502);
-    return responseJson(validateExplanation(input.verification, result));
+    return responseJson(validateExplanation(input.result, result));
   });
 }

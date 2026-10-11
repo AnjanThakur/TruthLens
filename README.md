@@ -49,4 +49,8 @@ Database security tests execute the actual base migration in isolated PostgreSQL
 
 `npm run build` then `npm start` serves the production application. Fixture APIs are disabled under production even if mock flags were mistakenly enabled. A live FastAPI service is required for real verification; synthetic examples are never evidence of live accuracy.
 
-The current live integration and HTTPS deployment remain pending: the user confirmed that Person 1's backend and Supabase are not yet available. See `docs/gate-status.md` for exact tested scope and `docs/deployment.md` for deployment and release gates. G5 tracker, radar, public sharing and WhatsApp integration are deferred.
+Person 1's backend code is now present. The website contract has been reconciled with its actual APIs. WhatsApp is a required deliverable implemented as the separate `whatsapp-adapter/` service; live Meta delivery and paid provider acceptance remain pending owner approval/configuration. See `docs/whatsapp-gates.md`, `whatsapp-adapter/README.md` and `docs/whatsapp-deployment.md`. The earlier `docs/gate-status.md` records historical website checks. Tracker/radar/public sharing remain deferred.
+
+## Required WhatsApp connector
+
+The adapter validates signed webhooks, durably deduplicates/encrypts jobs, retrieves Meta media, calls the existing P1 APIs and formats source-linked replies. Its defaults disable live Meta sending and provider calls. Run `python -m truthlens_whatsapp.offline_demo` from its installed environment for a network-free routing demonstration. This does not prove actual WhatsApp delivery. See its README for setup, approval boundaries and commands.

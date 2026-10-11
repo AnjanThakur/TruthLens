@@ -34,6 +34,7 @@ import {
   type Explanation,
 } from '@/lib/api/contracts';
 import { acceptedTypes, validateFile } from '@/lib/api/files';
+import { extractionChunks } from '@/lib/api/chunks';
 import { ApiError, errorMessage } from '@/lib/api/errors';
 import { uiError } from '@/lib/i18n/errors';
 type Phase = 'idle' | 'validating' | 'extracting' | 'review' | 'verifying' | 'results';
@@ -103,9 +104,11 @@ function Preview({ file, kind }: { file: File; kind: InputType }) {
 export function VerificationWorkspace({
   mock,
   historyEnabled,
+  whatsappUrl,
 }: {
   mock: boolean;
   historyEnabled: boolean;
+  whatsappUrl?: string | null;
 }) {
   const { language, easy, t } = usePreferences();
   const metadataLabels: Record<string, string> = {
@@ -145,7 +148,13 @@ export function VerificationWorkspace({
     const abort = new AbortController();
     if (!mock)
       request('/api/health', healthSchema, { signal: abort.signal })
-        .then((h) => setHealth(h.capabilities?.verify === false ? 'offline' : 'live'))
+        .then((h) =>
+          setHealth(
+            h.capabilities?.claim_verification === false || h.capabilities?.verify === false
+              ? 'offline'
+              : 'live',
+          ),
+        )
         .catch(() => {
           if (!abort.signal.aborted) setHealth('offline');
         });
@@ -214,7 +223,9 @@ export function VerificationWorkspace({
     changeType(sample.verification.input.input_type);
     setText(sample.verification.input.text);
     if (sample.verification.input.input_type === 'url')
-      setUrl(String(sample.extraction?.metadata?.url ?? 'https://example.org/mock-article'));
+      setUrl(
+        String(sample.extraction?.extraction_details?.url ?? 'https://example.org/mock-article'),
+      );
     if (sample.extraction) {
       setExtraction(sample.extraction);
       setReviewText(sample.extraction.text);
@@ -246,21 +257,16 @@ export function VerificationWorkspace({
         if (extracted.text.trim().length < 10)
           throw new ApiError('EXTRACTION_EMPTY', errorMessage('EXTRACTION_EMPTY'));
         setExtraction(extracted);
-        setReviewText(extracted.text);
+        setReviewText(extracted.extraction_details.text_is_preview === true ? '' : extracted.text);
         setPhase('review');
       } else {
         const input = verifyRequestSchema.parse({
           text: type === 'text' ? text : reviewText,
           input_type: type,
-          ...(extraction
-            ? {
-                detected_language: extraction.detected_language,
-                source_metadata: {
-                  ...extraction.metadata,
-                  user_edited: reviewText !== extraction.text,
-                },
-              }
-            : {}),
+          input_language: 'auto',
+          response_language: language,
+          audience: easy ? 'senior' : 'adult',
+          jurisdiction: 'IN',
         });
         setPhase('verifying');
         const verified = await verify(input, abort.signal);
@@ -320,7 +326,8 @@ export function VerificationWorkspace({
     }
   }
   const currentExplanation =
-    explanation?.language === language && explanation.audience === (easy ? 'easy' : 'standard')
+    explanation?.response_language === language &&
+    explanation.audience === (easy ? 'senior' : 'adult')
       ? explanation
       : null;
   return (
@@ -336,6 +343,22 @@ export function VerificationWorkspace({
           <span>{t.headlineAccent}</span>
         </h1>
         <p>{t.intro}</p>
+        {whatsappUrl && (
+          <p>
+            <a
+              className="button secondary"
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {language === 'hi'
+                ? 'WhatsApp पर जाँचें'
+                : language === 'mr'
+                  ? 'WhatsApp वर तपासा'
+                  : 'Check on WhatsApp'}
+            </a>
+          </p>
+        )}
         <div className="hero-detail">
           <ShieldCheck size={17} aria-hidden="true" />
           <span>
@@ -437,7 +460,7 @@ export function VerificationWorkspace({
                         }
                       }}
                       placeholder={t.placeholder}
-                      maxLength={30000}
+                      maxLength={24000}
                       rows={7}
                       required
                       aria-describedby="privacy-note text-count"
@@ -506,12 +529,46 @@ export function VerificationWorkspace({
                     {t.reviewTitle}
                   </h3>
                   <p>{t.reviewHelp}</p>
+                  {extraction.extraction_details.text_is_preview === true && (
+                    <div className="notice chunk-review">
+                      <p>
+                        {language === 'hi'
+                          ? 'यह केवल पूर्वावलोकन है। जाँचने के लिए पृष्ठ का एक भाग चुनें। परिणाम केवल चुने हुए भाग के लिए है।'
+                          : language === 'mr'
+                            ? 'हा फक्त पूर्वावलोकन आहे. तपासणीसाठी पानाचा एक भाग निवडा. निकाल फक्त निवडलेल्या भागासाठी आहे.'
+                            : 'This is a document preview. Select a page chunk to check. Each result covers only the selected text, not the whole PDF.'}
+                      </p>
+                      <label htmlFor="page-chunk">{t.pages}</label>
+                      <select
+                        id="page-chunk"
+                        defaultValue=""
+                        disabled={busy}
+                        onChange={(e) => {
+                          const chunk = extractionChunks(extraction)[Number(e.target.value)];
+                          if (chunk) {
+                            setReviewText(chunk.text);
+                            clearResult();
+                            setPhase('review');
+                          }
+                        }}
+                      >
+                        <option value="" disabled>
+                          —
+                        </option>
+                        {extractionChunks(extraction).map((chunk, i) => (
+                          <option key={i} value={i}>
+                            {t.pages} {chunk.page_number ?? '—'} · {i + 1}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div className="extraction-meta">
                     <span>
                       {t.language}: {extraction.detected_language}
                     </span>
-                    {extraction.metadata &&
-                      Object.entries(extraction.metadata)
+                    {extraction.extraction_details &&
+                      Object.entries(extraction.extraction_details)
                         .filter(
                           ([key, value]) =>
                             [
@@ -548,7 +605,7 @@ export function VerificationWorkspace({
                       setPhase('review');
                     }}
                     disabled={busy}
-                    maxLength={30000}
+                    maxLength={24000}
                     rows={6}
                   />
                   {reviewText !== extraction.text && <p className="edited-notice">{t.edited}</p>}

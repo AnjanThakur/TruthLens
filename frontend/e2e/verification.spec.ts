@@ -1,7 +1,59 @@
 import { test, expect } from '@playwright/test';
+import backendResult from '../tests/fixtures/person1-response.json' with { type: 'json' };
+import type { Verification } from '../src/lib/api/contracts';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
+});
+
+test('actual backend shape renders partial warnings and structured context', async ({ page }) => {
+  const report = structuredClone(backendResult) as Verification;
+  report.status = 'partial';
+  report.warnings = ['search_unavailable: one dependency failed'];
+  report.claims[0].temporal_context.notes = 'The event date is not established.';
+  await page.route('**/api/verify', (route) => route.fulfill({ json: report }));
+  await page
+    .getByLabel('Paste the message you want to check', { exact: true })
+    .fill('A fictional test claim.');
+  await page.getByRole('button', { name: 'Check the facts', exact: true }).click();
+  await expect(page.getByText(/Partial check: some evidence/)).toBeVisible();
+  await expect(
+    page.getByText('The event date is not established.', { exact: false }),
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: /Offline source fixture/ })).toHaveAttribute(
+    'href',
+    'https://example.test/source',
+  );
+});
+
+test('long PDF preview requires selecting a page chunk before verification', async ({ page }) => {
+  await page.route('**/api/extract', (route) =>
+    route.fulfill({
+      json: {
+        text: 'Preview only',
+        detected_language: 'en',
+        input_type: 'pdf',
+        warnings: ['extraction_text_truncated'],
+        extraction_details: {
+          text_is_preview: true,
+          chunks: [{ chunk_id: 1, page_number: 2, text: 'Actual returned page chunk.' }],
+        },
+      },
+    }),
+  );
+  await page.getByRole('button', { name: 'PDF', exact: true }).click();
+  await page.getByLabel('Choose a file', { exact: true }).setInputFiles({
+    name: 'test.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-fixture'),
+  });
+  await page.getByRole('button', { name: 'Extract text', exact: true }).click();
+  await expect(page.getByLabel('Extracted text', { exact: true })).toHaveValue('');
+  await page.locator('#page-chunk').selectOption('0');
+  await expect(page.getByLabel('Extracted text', { exact: true })).toHaveValue(
+    'Actual returned page chunk.',
+  );
+  await expect(page.getByText(/Each result covers only the selected text/)).toBeVisible();
 });
 test('multi-claim forward, separate evidence, no implicit persistence', async ({ page }) => {
   await expect(

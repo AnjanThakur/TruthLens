@@ -74,7 +74,10 @@ export async function explain(
     await request(
       '/api/explain',
       explanationSchema,
-      jsonRequest({ verification, language, audience }, signal),
+      jsonRequest(
+        { result: verification, language, audience: audience === 'easy' ? 'senior' : 'adult' },
+        signal,
+      ),
     ),
   );
 }

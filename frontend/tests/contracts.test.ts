@@ -71,27 +71,16 @@ describe('document-defined verification contract', () => {
     ).toBe(true);
     expect(isMockMode({ NODE_ENV: 'development', USE_MOCK_API: 'true' })).toBe(false);
   });
-  it('only accepts explanation projections matching original claim identities', () => {
+  it('preserves every immutable field during full-result re-explanation', () => {
     const original = fixtures[0].verification;
-    const rewritten = {
-      verification_id: original.verification_id,
-      language: 'hi',
-      audience: 'easy',
-      summary: 'सारांश',
-      claims: original.claims.map((c) => ({
-        claim_id: c.claim_id,
-        explanation: 'विवरण',
-        short_summary: 'सारांश',
-        next_step: 'अगला कदम',
-        verdict: 'false',
-        evidence: [],
-      })),
-    };
-    const before = structuredClone(original);
-    const display = validateExplanation(original, rewritten);
-    expect(original).toEqual(before);
-    expect(display.claims[0]).not.toHaveProperty('verdict');
-    expect(() => validateExplanation(original, { ...rewritten, claims: [] })).toThrow();
+    const rewritten = structuredClone(original);
+    rewritten.response_language = 'hi';
+    rewritten.audience = 'senior';
+    rewritten.claims[0].explanation = 'विवरण';
+    expect(validateExplanation(original, rewritten).claims[0].explanation).toBe('विवरण');
+    rewritten.claims[0].verdict = 'false';
+    expect(() => validateExplanation(original, rewritten)).toThrow();
+    expect(() => validateExplanation(original, { ...original, claims: [] })).toThrow();
   });
 });
 describe('file validation', () => {

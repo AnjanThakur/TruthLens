@@ -24,7 +24,7 @@ const copy = {
       ],
       [
         'Sharing and WhatsApp',
-        'Copying a result does not automatically publish it. Public truth cards, aggregation and WhatsApp are optional later features. TruthLens cannot read private chats or discover forwarding recipients.',
+        'Copying a result does not automatically publish it. WhatsApp processes only content you choose to send to the bot. Processing data is temporary and is not automatically added to website history. TruthLens cannot read private chats or discover forwarding recipients.',
       ],
     ],
   },
@@ -50,7 +50,7 @@ const copy = {
       ],
       [
         'साझा करना और व्हाट्सऐप',
-        'सार कॉपी करने से रिपोर्ट अपने आप प्रकाशित नहीं होती। सार्वजनिक ट्रुथ कार्ड, सामूहिक विश्लेषण और व्हाट्सऐप बाद के वैकल्पिक विकल्प हैं। ट्रुथलेंस निजी चैट नहीं पढ़ सकता या फॉरवर्ड पाने वालों की पहचान नहीं कर सकता।',
+        'सार कॉपी करने से रिपोर्ट अपने आप प्रकाशित नहीं होती। व्हाट्सऐप केवल बॉट को भेजी गई सामग्री की जाँच करता है। अस्थायी सामग्री वेबसाइट के इतिहास में अपने आप नहीं जुड़ती। ट्रुथलेंस निजी चैट नहीं पढ़ सकता।',
       ],
     ],
   },
@@ -76,7 +76,7 @@ const copy = {
       ],
       [
         'शेअर करणे आणि व्हॉट्सअॅप',
-        'सारांश कॉपी केल्याने अहवाल आपोआप प्रकाशित होत नाही. सार्वजनिक ट्रुथ कार्ड, एकत्रित विश्लेषण आणि व्हॉट्सअॅप नंतरची ऐच्छिक वैशिष्ट्ये आहेत. ट्रुथलेन्स खाजगी चॅट वाचू शकत नाही किंवा फॉरवर्ड मिळालेल्यांची ओळख शोधू शकत नाही.',
+        'सारांश कॉपी केल्याने अहवाल आपोआप प्रकाशित होत नाही. व्हॉट्सअॅप फक्त बॉटला पाठवलेली माहिती तपासते. तात्पुरती माहिती वेबसाइटच्या इतिहासात आपोआप जतन होत नाही. ट्रुथलेन्स खाजगी चॅट वाचू शकत नाही.',
       ],
     ],
   },

@@ -4,7 +4,7 @@
 
 `frontend/src/app`: pages, fixed-origin P1 proxy routes, P2 history/auth routes.
 `frontend/src/components`: responsive verification, results, preferences and history views.
-`frontend/src/lib/api`: shared provisional schemas, transport, errors, upload validation and server adapter.
+`frontend/src/lib/api`: schemas reconciled with Person 1 actual OpenAPI, transport, errors, upload validation and server adapter.
 `frontend/src/lib/history`: saved-report schema and HMAC receipt validation.
 `frontend/src/lib/i18n`: static UI translations and verdict/stance labels.
 `frontend/src/lib/supabase`: server-only, user-scoped cookie client.
@@ -12,7 +12,7 @@
 
 ## Backend integration
 
-1. Obtain P1 OpenAPI and confirm every provisional decision in `api-contract.md`.
+1. Review `backend-api-contract.md`, `backend-openapi.json` and `person2-contract-reconciliation.md` with Person 1. The earlier `api-contract.md` is historical.
 2. Set a fixed FastAPI origin in `BACKEND_BASE_URL`; never point it at the Next.js app or a user-controlled URL. Paths `/api/*` resolve at that origin.
 3. Set optional server-only `BACKEND_API_TOKEN` only if P1 confirms bearer auth.
 4. Configure timeouts and upload limits to match both P1 and the web host. Frontend provisional limit is 10 MiB. Hosting request limits can be smaller; reduce the UI and server limits together or negotiate a different upload path. Do not silently accept files the platform rejects.
@@ -38,3 +38,7 @@ Run a short shared check with Person 1 using two different claims and a real fil
 Versions are locked in `frontend/package-lock.json`. Use `npm ci`; do not update schemas or dependencies silently. Next.js 16 generates frontend/AGENTS.md and ships local API documentation in `node_modules/next/dist/docs`. The direct ESLint setup uses TypeScript, React Hooks and JSX accessibility rules rather than a Next preset with an unpatched transitive glob advisory. Re-evaluate plugin support before a future ESLint major upgrade.
 
 References: [Next.js installation](https://nextjs.org/docs/app/getting-started/installation), [Supabase server clients](https://supabase.com/docs/guides/auth/server-side/creating-a-client), [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security). Documentation checked 2026-10-11; installed SDK/source and lockfile govern this checkout.
+
+## Required WhatsApp service
+
+See `../whatsapp-adapter/README.md` for the separate service and `whatsapp-gates.md` for tested scope. No account access, live sends, paid provider use or publication without owner approval.

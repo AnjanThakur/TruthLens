@@ -1,3 +1,5 @@
+> Historical G0-G4 local report. Person 1 backend code is now present; WhatsApp is required under W0-W6. See whatsapp-gates.md for current acceptance.
+
 # Development gate report
 
 Date: 2026-10-11. User confirmed Person 1 backend and Supabase project are not yet available; finish and test locally. Primary authority: original Word execution plan. Person 1 responsibilities have not been implemented. No production service or external account was created.

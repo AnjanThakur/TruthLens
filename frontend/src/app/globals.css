@@ -788,6 +788,22 @@ input::placeholder {
   color: var(--muted);
   margin: 20px 0;
 }
+.chunk-review {
+  display: block;
+}
+.chunk-review label {
+  display: block;
+  margin: 8px 0;
+}
+.chunk-review select {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: white;
+  color: var(--ink);
+}
 .service-notes ul {
   line-height: 1.7;
 }
