@@ -60,18 +60,12 @@ def initialize(project: Path, private: Path) -> dict[str, str]:
         "ALERTS_SOURCE_SECRET",
         "HISTORY_SIGNING_SECRET",
     )
-    if bool(existing.get("ALERTS_DATABASE_PATH")) != bool(
-        existing.get("ALERTS_ENCRYPTION_KEY")
-    ):
-        raise ValueError(
-            "Existing alert storage requires its original paired encryption key"
-        )
+    if bool(existing.get("ALERTS_DATABASE_PATH")) != bool(existing.get("ALERTS_ENCRYPTION_KEY")):
+        raise ValueError("Existing alert storage requires its original paired encryption key")
     if (project / "backend" / "state" / "alerts.sqlite3").exists() and not existing.get(
         "ALERTS_ENCRYPTION_KEY"
     ):
-        raise ValueError(
-            "Restore the original alert encryption key before using existing state"
-        )
+        raise ValueError("Restore the original alert encryption key before using existing state")
     values = {key: existing.get(key) or secrets.token_hex(32) for key in names}
     values["ALERTS_ENCRYPTION_KEY"] = (
         existing.get("ALERTS_ENCRYPTION_KEY") or Fernet.generate_key().decode()
@@ -117,19 +111,13 @@ def configure(project: Path, private: Path, service: str, providers: bool) -> Pa
             os.environ["GEMINI_API_KEY"] = os.environ["TAVILY_API_KEY"] = ""
         for key in ("TESSDATA_DIR", "TESSERACT_CMD", "FFMPEG_CMD", "FFPROBE_CMD"):
             value = os.environ.get(key, "")
-            if (
-                value
-                and not Path(value).is_absolute()
-                and ("/" in value or "\\" in value)
-            ):
+            if value and not Path(value).is_absolute() and ("/" in value or "\\" in value):
                 os.environ[key] = str((private / "backend" / value).resolve())
         if (
             not os.environ.get("TESSDATA_DIR")
             and (private / "backend" / ".runtime" / "tessdata").exists()
         ):
-            os.environ["TESSDATA_DIR"] = str(
-                private / "backend" / ".runtime" / "tessdata"
-            )
+            os.environ["TESSDATA_DIR"] = str(private / "backend" / ".runtime" / "tessdata")
     elif service == "website":
         os.environ.setdefault("BACKEND_BASE_URL", "http://127.0.0.1:8000")
         os.environ.setdefault("ALERTS_BASE_URL", "http://127.0.0.1:8001")
@@ -140,21 +128,15 @@ def configure(project: Path, private: Path, service: str, providers: bool) -> Pa
         if url.startswith("sqlite:///"):
             path = Path(url.removeprefix("sqlite:///"))
             if not path.is_absolute():
-                os.environ["DATABASE_URL"] = "sqlite:///" + str(
-                    (envfile.parent / path).resolve()
-                )
+                os.environ["DATABASE_URL"] = "sqlite:///" + str((envfile.parent / path).resolve())
         # The HTTP adapter still records signed callbacks; no send or queue claim is enabled.
-        os.environ["TWILIO_OUTBOUND_ENABLED"] = os.environ["META_OUTBOUND_ENABLED"] = (
-            "false"
-        )
+        os.environ["TWILIO_OUTBOUND_ENABLED"] = os.environ["META_OUTBOUND_ENABLED"] = "false"
         os.environ["BACKEND_ENABLED"] = "false"
         os.environ["RESPONSE_MODE"] = "development"
     return directory
 
 
-def preflight(
-    project: Path, private: Path, service: str, providers: bool, port: int
-) -> dict:
+def preflight(project: Path, private: Path, service: str, providers: bool, port: int) -> dict:
     directory = configure(project, private, service, providers)
     sys.path.insert(0, str(directory))
     result = {
@@ -192,9 +174,7 @@ def preflight(
             if not wa_path.is_absolute():
                 wa_path = private / "whatsapp-adapter" / wa_path
             if Path(settings.database_path).resolve() == wa_path.resolve():
-                raise ValueError(
-                    "Alerts must use a database isolated from WhatsApp state"
-                )
+                raise ValueError("Alerts must use a database isolated from WhatsApp state")
         result["storage"] = "isolated_encrypted_sqlite"
     elif service in {"adapter", "worker"}:
         from truthlens_whatsapp.config import Settings
@@ -205,9 +185,7 @@ def preflight(
     elif service == "website":
         if (
             not shutil.which("node")
-            or not (
-                directory / "node_modules" / "next" / "dist" / "bin" / "next"
-            ).exists()
+            or not (directory / "node_modules" / "next" / "dist" / "bin" / "next").exists()
             or not (directory / ".next" / "BUILD_ID").exists()
         ):
             raise ValueError("Install frontend dependencies and build first")
@@ -247,16 +225,16 @@ def run(args) -> None:
     private = private_root(project, args.private)
     service = args.service
     port = args.port if args.port is not None else SERVICES[service][1]
-    if args.controlled_acceptance and service != "backend":
-        raise ValueError("Controlled provider acceptance is backend-only")
+    if args.controlled_acceptance and service not in {"backend", "website"}:
+        raise ValueError("Controlled acceptance is backend/website only")
     result = preflight(
         project,
         private,
         service,
-        args.providers_enabled or args.controlled_acceptance,
+        args.providers_enabled or (args.controlled_acceptance and service == "backend"),
         port,
     )
-    if args.controlled_acceptance:
+    if args.controlled_acceptance and service == "backend":
         result["acceptance_ceilings"] = {"gemini": 5, "tavily": 2, "twilio": 0}
     if args.check:
         print(json.dumps(result))
@@ -276,6 +254,7 @@ def run(args) -> None:
                 "pid": os.getpid(),
                 "service": service,
                 "port": port,
+                "controlled_acceptance": args.controlled_acceptance,
                 "started_at": datetime.now(UTC).isoformat(),
                 "state": "starting",
             }
@@ -288,6 +267,8 @@ def run(args) -> None:
     server = None
     counters = None
     if service == "website":
+        if args.controlled_acceptance:
+            os.environ["BACKEND_BASE_URL"] = "http://127.0.0.1:8002"
         os.environ["APP_ORIGIN"] = f"http://127.0.0.1:{port}"
         command = [
             shutil.which("node"),
@@ -352,6 +333,7 @@ def run(args) -> None:
                 "pid": os.getpid(),
                 "service": service,
                 "port": port,
+                "controlled_acceptance": args.controlled_acceptance,
                 "started_at": datetime.now(UTC).isoformat(),
                 "state": "paused" if service == "worker" else "running",
             }
@@ -390,6 +372,7 @@ def run(args) -> None:
                     "pid": os.getpid(),
                     "service": service,
                     "port": port,
+                    "controlled_acceptance": args.controlled_acceptance,
                     "state": "stopped",
                 }
             ),

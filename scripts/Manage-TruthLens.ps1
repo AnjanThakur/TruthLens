@@ -9,6 +9,7 @@ param(
     [switch]$ControlledAcceptance
 )
 $ErrorActionPreference = 'Stop'
+if ($ControlledAcceptance -and @($Services | Where-Object { $_ -notin @('backend','website') }).Count) { throw 'Controlled acceptance supports only backend and website.' }
 $project = (Resolve-Path -LiteralPath $ProjectRoot).Path
 if (-not $PrivateRoot) {
     if ((Split-Path -Leaf (Split-Path -Parent $project)) -eq '.worktrees') { $PrivateRoot = Split-Path -Parent (Split-Path -Parent $project) }
@@ -22,7 +23,7 @@ function Get-Records {
     Get-ChildItem -LiteralPath $runtime -Filter '*.json' | Where-Object { $_.BaseName -notlike '*.*' } | ForEach-Object {
         try {
             $entry = Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json
-            if ($entry.service -in $Services -and $entry.state -ne 'stopped' -and ([guid]$entry.instance).ToString() -eq $_.BaseName) { $entry }
+            if (($entry.controlled_acceptance -or -not $ControlledAcceptance) -and $entry.service -in $Services -and $entry.state -ne 'stopped' -and ([guid]$entry.instance).ToString() -eq $_.BaseName) { $entry }
         } catch { Write-Warning 'Ignored an invalid private runtime record.' }
     }
 }
@@ -59,7 +60,7 @@ if ($Action -in @('start','restart')) {
         $checkArgs = @($runner,'--project',$project,'--private',$private,'--service',$service,'--check')
         if ($service -eq 'website') { $checkArgs += @('--port',[string]$WebsitePort) }
         if ($EnableProviders -and $service -eq 'backend') { $checkArgs += '--providers-enabled' }
-        if ($ControlledAcceptance -and $service -eq 'backend') { $checkArgs += '--controlled-acceptance' }
+        if ($ControlledAcceptance) { $checkArgs += '--controlled-acceptance'; if ($service -eq 'backend') { $checkArgs += @('--port','8002') } }
         $check = (& $python @checkArgs) | ConvertFrom-Json
         if ($LASTEXITCODE -ne 0) { throw "Preflight failed for $service. No service was started." }
         if ($check.port_in_use) { throw "Port $($check.port) is occupied. Omit $service to reuse your existing service; no existing process was stopped." }
@@ -70,7 +71,7 @@ foreach ($service in $Services) {
     $argsList = @($runner,'--project',$project,'--private',$private,'--service',$service)
     if ($service -eq 'website') { $argsList += @('--port', [string]$WebsitePort) }
     if ($EnableProviders -and $service -eq 'backend') { $argsList += '--providers-enabled' }
-    if ($ControlledAcceptance -and $service -eq 'backend') { $argsList += '--controlled-acceptance' }
+    if ($ControlledAcceptance) { $argsList += '--controlled-acceptance'; if ($service -eq 'backend') { $argsList += @('--port','8002') } }
     if ($Action -eq 'check') { & $python @argsList --check; if ($LASTEXITCODE -ne 0) { throw "Preflight failed for $service. No process was started." }; continue }
     $instance = [guid]::NewGuid().ToString()
     $argsList += @('--instance', $instance)
@@ -79,7 +80,7 @@ foreach ($service in $Services) {
     Start-Sleep -Milliseconds 800
     if ($process.HasExited) { throw "Startup failed for $service. See the private sanitized runtime logs; no existing process was stopped." }
     if ($service -in @('backend','alerts','website','adapter')) {
-        $port = switch ($service) { 'backend' {8000} 'alerts' {8001} 'website' {$WebsitePort} 'adapter' {8100} }
+        $port = switch ($service) { 'backend' {if ($ControlledAcceptance) {8002} else {8000}} 'alerts' {8001} 'website' {$WebsitePort} 'adapter' {8100} }
         $healthPath = if ($service -eq 'backend') { '/api/health' } elseif ($service -eq 'website') { '/' } else { '/health' }
         $ready = $false
         $deadline = (Get-Date).AddSeconds(20)

@@ -3,11 +3,11 @@ on:
   push:
     branches: [feature/person2-whatsapp, feature/scam-alert-intelligence, integration/person2-scam-intelligence]
   pull_request:
-    paths: ['frontend/**', 'whatsapp-adapter/**', 'supabase/**', 'backend/**', 'docs/scam-alert*', '.github/workflows/person2-offline.yml']
+    paths: ['frontend/**', 'whatsapp-adapter/**', 'supabase/**', 'backend/**', 'scripts/**', 'docs/scam-alert*', '.github/workflows/person2-offline.yml']
 permissions:
   contents: read
 jobs:
-  scam-alerts:
+  backend:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -19,9 +19,10 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -e '.[dev]'
-      # Dedicated alert tests block live HTTP transports. This job does not
-      # claim full backend/native-media acceptance; see combined-integration.md.
-      - run: python -m pytest tests/test_alerts.py -q -p no:cacheprovider
+      # All provider responses are mocked; native OCR/media tools run locally.
+      - run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-hin tesseract-ocr-mar ffmpeg
+      - run: python -m pytest -q -p no:cacheprovider
+      - run: python -m scripts.evaluate_policy
       - run: python -m ruff check app tests scripts
       - run: python -m mypy app
       - run: python -m pip check
@@ -46,6 +47,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
+      - run: npm run format:check
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

@@ -106,12 +106,7 @@ def scenarios(backend: Path) -> dict:
                 dates=["2026-10-01", "2026-10-10"],
                 current=True,
             ),
-            StubSearch(
-                [
-                    SearchHit(url, "Fictional dated record", "Snippet", 0.9)
-                    for url in urls
-                ]
-            ),
+            StubSearch([SearchHit(url, "Fictional dated record", "Snippet", 0.9) for url in urls]),
             StubFetcher(pages),
             outdated,
         ),
