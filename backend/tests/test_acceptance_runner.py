@@ -1,5 +1,5 @@
+import http.client
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -80,9 +80,22 @@ def test_exported_openapi_contract_is_identical(settings):
     from app.main import create_app
 
     expected = Path(__file__).resolve().parents[2] / "docs" / "backend-openapi.json"
-    assert (
-        expected.read_bytes()
-        == (json.dumps(create_app(settings).openapi(), ensure_ascii=False, indent=2) + "\n")
-        .replace("\n", os.linesep)
-        .encode()
-    )
+    # JSON structure is contractual; platform newlines and indentation are not.
+    assert json.loads(expected.read_text(encoding="utf-8")) == create_app(settings).openapi()
+
+
+@pytest.mark.parametrize(
+    ("too_large", "unprocessable"),
+    [
+        ("Request Entity Too Large", "Unprocessable Entity"),
+        ("Content Too Large", "Unprocessable Content"),
+    ],
+)
+def test_openapi_contract_is_stable_across_python_http_phrases(
+    settings, monkeypatch, too_large, unprocessable
+):
+    monkeypatch.setitem(http.client.responses, 413, too_large)
+    monkeypatch.setitem(http.client.responses, 422, unprocessable)
+    # Exercise fresh schema generation under both stdlib versions. Every
+    # endpoint/schema/constraint still has to match the published snapshot.
+    test_exported_openapi_contract_is_identical(settings)

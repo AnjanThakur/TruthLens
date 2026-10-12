@@ -1,5 +1,35 @@
 # Backend implementation and validation record
 
+## Cross-version GitHub Actions contract repair — 12 October 2026
+
+The push and pull-request workflows for `8b094d7` failed only
+`test_exported_openapi_contract_is_identical`: 437 backend tests passed and
+two Devanagari OCR cases were skipped because their Windows font is absent
+on the Linux runner. Website and adapter jobs passed all their checks.
+The same snapshot failure exists in the hosted runs for `f0b0fce` and
+`b5d42d9`; it is not evidence of an incomplete push.
+
+The complete failing schema diff contains only the HTTP 413/422 descriptions
+on the existing endpoints. Python 3.12 uses "Request Entity Too Large" and
+"Unprocessable Entity"; the Python 3.14-generated snapshot uses "Content Too
+Large" and "Unprocessable Content". FastAPI inherited these interpreter
+defaults because the router did not explicitly declare descriptions.
+Payloads, paths, schemas, required fields and constraints were identical.
+
+The router now explicitly supplies the descriptions already published in
+the snapshot. The snapshot test compares complete parsed JSON, retaining
+all contract checks while disregarding platform newlines and formatting.
+Two regressions substitute the older and newer stdlib reason phrases and
+require the entire generated schema to remain equal to the published file.
+The published OpenAPI file and public API behavior were not changed.
+
+PASS locally: 442 backend tests; 14 deterministic policy cases; Ruff; mypy
+across 48 files; pip check. All provider keys were blank for testing; no
+Gemini, Tavily, Twilio or remote database operations were made. The separate
+CI audit records the original runs and repository-history checks. The
+replacement hosted workflow must be checked after this repair is pushed;
+local PASS alone is not a hosted CI claim.
+
 ## Gemini 503 recovery handling — 12 October 2026
 
 Captured 503s indicate intermittent upstream availability: the same model

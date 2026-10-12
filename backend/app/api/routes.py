@@ -24,7 +24,19 @@ from app.services.extract.url import article_from_html
 router = APIRouter(
     prefix="/api",
     responses={
-        status: {"model": ErrorResponse} for status in (400, 413, 415, 422, 500, 502, 503, 504)
+        # Python 3.12 and 3.14 use different default HTTP reason phrases.
+        # Keep the published OpenAPI contract independent of the interpreter.
+        status: {"model": ErrorResponse, "description": description}
+        for status, description in {
+            400: "Bad Request",
+            413: "Content Too Large",
+            415: "Unsupported Media Type",
+            422: "Unprocessable Content",
+            500: "Internal Server Error",
+            502: "Bad Gateway",
+            503: "Service Unavailable",
+            504: "Gateway Timeout",
+        }.items()
     },
 )
 
