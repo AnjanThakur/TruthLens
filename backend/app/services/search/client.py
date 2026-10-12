@@ -31,6 +31,7 @@ class SearchBudget:
 
 
 CURRENT_SEARCH_BUDGET: ContextVar[SearchBudget | None] = ContextVar("search_budget", default=None)
+CURRENT_SEARCH_DOMAINS: ContextVar[tuple[str, ...]] = ContextVar("search_domains", default=())
 
 
 @dataclass
@@ -56,7 +57,9 @@ class TavilySearch:
     def __init__(self, settings: Settings, transport: httpx.AsyncBaseTransport | None = None):
         self.settings = settings
         self.transport = transport
-        self._cache: OrderedDict[str, tuple[float, list[SearchHit]]] = OrderedDict()
+        self._cache: OrderedDict[tuple[str, tuple[str, ...]], tuple[float, list[SearchHit]]] = (
+            OrderedDict()
+        )
         self._lock = asyncio.Lock()
         self.request_count = 0
         self._blocked_until = 0.0
@@ -72,7 +75,8 @@ class TavilySearch:
             raise AppError(
                 "search_unavailable", "Set TAVILY_API_KEY to retrieve source evidence.", 503
             )
-        key = " ".join(query.casefold().split())
+        domains = CURRENT_SEARCH_DOMAINS.get()
+        key = (" ".join(query.casefold().split()), domains)
         async with self._lock:
             cached = self._cache.get(key)
             if cached and time.monotonic() - cached[0] < self.settings.search_cache_ttl_seconds:
@@ -93,6 +97,7 @@ class TavilySearch:
             return hits
 
     async def _search(self, query: str) -> list[SearchHit]:
+        domains = CURRENT_SEARCH_DOMAINS.get()
         async with httpx.AsyncClient(
             timeout=self.settings.external_timeout_seconds,
             trust_env=False,
@@ -110,6 +115,11 @@ class TavilySearch:
                             "max_results": self.settings.max_evidence,
                             "include_answer": False,
                             "include_raw_content": False,
+                            **(
+                                {"include_domains": list(domains), "include_domains_mode": "prefer"}
+                                if domains
+                                else {}
+                            ),
                         },
                     )
                     if response.status_code in {402, 432, 433}:

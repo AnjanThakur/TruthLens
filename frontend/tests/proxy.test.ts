@@ -110,6 +110,28 @@ describe('live proxy isolation and errors', () => {
     expect(JSON.stringify(body)).not.toContain('private stack trace');
     expect(body).not.toHaveProperty('claims');
   });
+  it.each(['llm_timeout', 'request_timeout'])(
+    'preserves the timeout category for backend %s without forwarding private diagnostics',
+    async (code) => {
+      const fetch = vi.fn(async () =>
+        Response.json(
+          { error: { code, message: 'private provider detail', request_id: 'private-id' } },
+          { status: 504 },
+        ),
+      );
+      vi.stubGlobal('fetch', fetch);
+      const response = await verifyRoute(req('/api/verify', input));
+      expect(response.status).toBe(504);
+      expect(await response.json()).toEqual({
+        error: {
+          code: 'TIMEOUT',
+          message: 'The service took too long. Your submission has not been saved. Please retry.',
+        },
+      });
+      expect(response.headers.get('X-TruthLens-Receipt')).toBeNull();
+      expect(fetch).toHaveBeenCalledTimes(1);
+    },
+  );
   it('handles offline, timeout, malformed and empty-claim results', async () => {
     vi.stubGlobal(
       'fetch',

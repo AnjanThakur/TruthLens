@@ -10,10 +10,12 @@ from app.errors import AppError
 from app.schemas.models import AtomicClaim, Evidence, ExtractionResult, Provenance, SourceType
 from app.services.cache import AsyncMemo
 from app.services.common import normalize, now
+from app.services.diagnostics import emit
 from app.services.extract.encoding import decode_web_text
 from app.services.extract.url import Fetched, SafeFetcher, article_from_html, canonical_url
-from app.services.search.client import SearchHit, SearchProvider
+from app.services.search.client import CURRENT_SEARCH_DOMAINS, SearchHit, SearchProvider
 from app.services.search.investigation import investigation_plan
+from app.services.search.relevance import entity_score, subject_missing
 
 # Deliberate institution registry; arbitrary .gov.in or lookalike domains do not qualify.
 # This is publisher identity, not a guarantee of truth or relevance.
@@ -42,10 +44,15 @@ REGISTRY = {
     "thehindu.com": ("The Hindu", "secondary"),
     "indianexpress.com": ("The Indian Express", "secondary"),
     "loksatta.com": ("Loksatta", "secondary"),
+    # Review rationale and restricted paths: docs/publisher-quality-review-20261012.md
+    "timesofindia.indiatimes.com": ("The Times of India", "secondary"),
+    "ndtv.com": ("NDTV", "secondary"),
 }
 
 
-def relevant_window(text: str, queries: list[str], limit: int = 5000) -> str:
+def relevant_window(
+    text: str, queries: list[str], limit: int = 5000, claim: AtomicClaim | None = None
+) -> str:
     """Select a contiguous actual-text window, retaining excerpt provenance."""
     if len(text) <= limit:
         return text
@@ -53,8 +60,9 @@ def relevant_window(text: str, queries: list[str], limit: int = 5000) -> str:
     starts = list(range(0, len(text), max(1, limit // 2)))
     best = max(
         starts,
-        key=lambda offset: len(
-            tokens & set(re.findall(r"\w{3,}", text[offset : offset + limit].casefold()))
+        key=lambda offset: (
+            entity_score(text[offset : offset + limit], claim) if claim else 0,
+            len(tokens & set(re.findall(r"\w{3,}", text[offset : offset + limit].casefold()))),
         ),
     )
     return text[best : best + limit]
@@ -64,6 +72,21 @@ def identity(url: str) -> tuple[str, str, str]:
     host = (urlsplit(url).hostname or "").lower()
     for domain, (name, kind) in REGISTRY.items():
         if host == domain or host.endswith("." + domain):
+            path = urlsplit(url).path.casefold()
+            if (
+                domain == "timesofindia.indiatimes.com"
+                and ("/blogs/" in path or "/news/" not in path and "/india/" not in path)
+                or domain == "ndtv.com"
+                and not re.match(
+                    r"^/(?:india-news|world-news|entertainment|cities|business|science|health)/",
+                    path,
+                )
+            ):
+                return (
+                    name,
+                    "other",
+                    "Publisher reviewed, but this page is outside the reviewed editorial article scope.",
+                )
             return name, kind, "Reviewed institution domain registry: " + domain
     return host, "other", "Publisher domain only; authority has not been independently established."
 
@@ -135,11 +158,16 @@ class Ledger:
                 e.source_type != "other"
                 and e.excerpt_provenance == "fetched_page"
                 and "incomplete_content:" not in e.authority_basis
+                and "entity_mismatch:" not in e.authority_basis
                 for e in evidence.values()
             ):
                 break
             try:
-                returned = await self.search.search(stage.query)
+                domain_token = CURRENT_SEARCH_DOMAINS.set(stage.include_domains)
+                try:
+                    returned = await self.search.search(stage.query)
+                finally:
+                    CURRENT_SEARCH_DOMAINS.reset(domain_token)
                 warnings.extend(getattr(returned, "warnings", []))
             except AppError as exc:
                 warnings.append(exc.code)
@@ -175,6 +203,9 @@ class Ledger:
         ranked = sorted(
             evidence.values(),
             key=lambda e: (
+                "entity_mismatch:" not in e.authority_basis,
+                e.excerpt_provenance == "fetched_page"
+                and "incomplete_content:" not in e.authority_basis,
                 {"primary": 3, "secondary": 2, "fact_check": 2, "other": 0}[e.source_type],
                 e.relevance_score,
             ),
@@ -185,12 +216,31 @@ class Ledger:
             (
                 e
                 for e in ranked
-                if e not in selected and "investigation_stage=contradiction" in e.authority_basis
+                if e not in selected
+                and "investigation_stage=contradiction" in e.authority_basis
+                and "entity_mismatch:" not in e.authority_basis
             ),
             None,
         )
         if opposition and self.settings.max_evidence > 1:
             selected.append(opposition)
+        # Several URLs from the same publisher must not crowd out a different
+        # complete reviewed reporting source. This is diversity, not proof of
+        # independence (wire syndication still requires assessment).
+        publishers = {e.publisher for e in selected}
+        for source in ranked:
+            if (
+                source not in selected
+                and source.publisher not in publishers
+                and (
+                    source.source_type != "other"
+                    and source.excerpt_provenance == "fetched_page"
+                    and "incomplete_content:" not in source.authority_basis
+                    and "entity_mismatch:" not in source.authority_basis
+                )
+            ):
+                selected.append(source)
+                publishers.add(source.publisher)
         selected.extend(e for e in ranked if e not in selected)
         fingerprints: set[str] = set()
         for source in selected:
@@ -227,6 +277,7 @@ class Ledger:
         ranked = sorted(
             unique.items(),
             key=lambda x: (
+                entity_score(x[1].title + " " + x[1].content, claim),
                 {"primary": 3, "secondary": 2, "fact_check": 2, "other": 0}[identity(x[0])[1]],
                 x[1].score if math.isfinite(x[1].score) else 0,
             ),
@@ -252,14 +303,16 @@ class Ledger:
                         extracted.extraction_details["source_retrieved_at"]
                     )
                     excerpt = relevant_window(
-                        extracted.text, claim.queries, self.settings.source_excerpt_chars
+                        extracted.text, claim.queries, self.settings.source_excerpt_chars, claim
                     )
                     title = str(extracted.extraction_details.get("title") or title)[:500]
                     # Explicit page metadata supersedes search dates; inferred dates
                     # are never silently labeled publication/event dates.
                     published = extracted.extraction_details.get("published_at")
                     updated = extracted.extraction_details.get("updated_at")
-                    incomplete = any(
+                    incomplete = extracted.extraction_details.get(
+                        "content_complete"
+                    ) is False or any(
                         "ocr_" in note
                         or note.startswith(
                             (
@@ -278,6 +331,28 @@ class Ledger:
                 except AppError as exc:
                     warnings.append("source_page_unavailable:" + exc.code)
                     failure_code = exc.code
+                    # Only fixed categories and numeric status enter diagnostics,
+                    # never URLs, response bodies, exception text or credentials.
+                    categories = {
+                        "access_denied",
+                        "not_found",
+                        "rate_limited",
+                        "transient_server",
+                        "http_rejected",
+                        "connection_failed",
+                        "transport_error",
+                        "timeout",
+                        "deadline",
+                        "dns_failure",
+                        "javascript_required",
+                        "empty_article",
+                        "access_shell",
+                    }
+                    failure_category = exc.category if exc.category in categories else "unavailable"
+                    emit("source_retrieval", failure_category, exc.code, status=exc.provider_status)
+                    diagnostic = "; source_fetch_category=" + failure_category
+                    if exc.provider_status is not None:
+                        diagnostic += "; source_fetch_http_status=" + str(exc.provider_status)
                     # Unsafe addresses are not even retained as usable snippets.
                     if exc.code == "unsafe_url":
                         warnings.append("source_page_required_unavailable:unsafe_url")
@@ -289,10 +364,13 @@ class Ledger:
                 publisher, kind, basis = identity(final_url)
                 if failure_code:
                     basis += "; source_fetch_failure=" + failure_code
+                    basis += diagnostic
                     if kind != "other":
                         warnings.append("source_page_required_unavailable:" + failure_code)
                 if incomplete:
                     basis += "; incomplete_content: The fetched article/document did not provide full content."
+                if provenance == "fetched_page" and subject_missing(excerpt, claim):
+                    basis += "; entity_mismatch: The fetched passage does not contain the complete named subject; relevance is not established."
                 return Evidence(
                     title=title,
                     url=final_url,

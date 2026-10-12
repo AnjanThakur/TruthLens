@@ -10,6 +10,7 @@ from app.schemas.models import AtomicClaim
 class SearchStage:
     name: str
     query: str
+    include_domains: tuple[str, ...] = ()
 
 
 def authority_for(text: str, jurisdiction: str = "IN") -> str | None:
@@ -40,17 +41,26 @@ def investigation_plan(claim: AtomicClaim, jurisdiction: str = "IN") -> list[Sea
     if resolved:
         base += " " + " ".join(resolved[:3])
     domain = authority_for(claim.claim_text, jurisdiction)
-    primary = (f"site:{domain} {base}" if domain else claim.queries[0])[:400]
+    anchor = " ".join('"' + e.replace('"', "")[:80] + '"' for e in claim.entities[:4])[:160]
+    wires = ("reuters.com", "apnews.com", "bbc.com")
+    independent = f"{anchor} {base[:200]} reporting"
+    # Unknown-person/event claims have no government primary authority. Use a
+    # neutral wire discovery query rather than implicitly assuming a death hoax.
+    primary = (f"site:{domain} {base}" if domain else independent)[:400]
     regional = " तथ्य जांच खंडन" if re.search(r"[\u0900-\u097f]", claim.claim_text) else ""
-    independent = (
-        claim.queries[1] if len(claim.queries) > 1 else base + " Reuters AP BBC fact check"
+    corroboration = independent if domain else f"{anchor} {base[:200]} report sources"
+    contradiction = (
+        anchor + " " + base + " false claim official clarification correction fact check" + regional
     )
-    contradiction = base + " false claim official clarification correction fact check" + regional
     entities = " ".join(claim.entities[:4])
-    fallback = f"{'site:' + domain + ' ' if domain else ''}{entities} {claim.claim_text} clarification circular PDF"
+    fallback = (
+        f"site:{domain} {entities} {claim.claim_text} clarification circular PDF"
+        if domain
+        else f"{anchor} {claim.claim_text} report confirmation correction"
+    )
     stages = [
-        SearchStage("primary", primary),
-        SearchStage("corroboration", independent[:400]),
+        SearchStage("primary", primary, () if domain else wires),
+        SearchStage("corroboration", corroboration[:400], wires if domain else ()),
         SearchStage("contradiction", contradiction[:400]),
         SearchStage("fallback", fallback[:400]),
     ]

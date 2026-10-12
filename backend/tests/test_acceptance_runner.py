@@ -10,6 +10,7 @@ from conftest import CLAIMS
 
 from app.config import Settings
 from app.errors import AppError
+from app.schemas.models import ClaimBatch
 from scripts import validate_live
 
 
@@ -67,7 +68,7 @@ async def test_live_budgets_fail_before_any_provider_call(settings):
     llm, search = validate_live.BudgetedGemini(settings), validate_live.BudgetedSearch(settings)
     llm.budget = search.budget = 0
     with pytest.raises(AppError, match="budget") as error:
-        await llm.structured("fixture", {}, type(None))
+        await llm.structured("fixture", {}, ClaimBatch)
     assert error.value.code == "llm_live_budget_exhausted"
     with pytest.raises(AppError) as error:
         await search._search(CLAIMS[0])

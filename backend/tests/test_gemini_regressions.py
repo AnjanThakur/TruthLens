@@ -5,9 +5,12 @@ import wave
 
 import httpx
 import pytest
+from conftest import CLAIMS, StubFetcher, StubSearch
+from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
 from app.errors import AppError
+from app.main import create_app
 from app.schemas.models import ClaimBatch
 from app.services.extract.media import MediaExtractor
 from app.services.extract.runtime import executable
@@ -96,6 +99,50 @@ async def test_gemini_timeout_and_prompt_limit(settings):
             "Extract", {"text": "a" * 1001}, ClaimBatch
         )
     assert error.value.code == "prompt_too_large"
+
+
+def test_model_generation_has_its_own_bounded_deadline(settings):
+    assert settings.external_timeout_seconds == 20
+    assert settings.llm_timeout_seconds == 45
+    assert settings.llm_timeout_seconds < settings.request_timeout_seconds / 3
+    settings.llm_timeout_seconds = 30
+    assert GeminiLLM(settings).settings.llm_timeout_seconds == 30
+
+
+async def test_instruction_and_schema_size_are_checked_before_spending_a_model_attempt(settings):
+    settings.max_prompt_chars = 1000
+    llm = GeminiLLM(settings)
+    with pytest.raises(AppError) as error:
+        await llm.structured("Long instruction " * 100, {}, ClaimBatch)
+    assert error.value.code == "prompt_too_large"
+    assert llm.request_count == 0
+
+
+def test_claim_extraction_timeout_returns_504_without_retry_or_search(settings, caplog):
+    settings.gemini_api_key = SecretStr("test-only-secret")
+    calls = 0
+
+    def handler(request):
+        nonlocal calls
+        calls += 1
+        raise httpx.ReadTimeout("test-only-secret private input", request=request)
+
+    class NoSearch(StubSearch):
+        async def search(self, query):
+            pytest.fail("Claim extraction timed out; search must not be called")
+
+    llm = GeminiLLM(settings, httpx.MockTransport(handler))
+    client = TestClient(create_app(settings, llm, NoSearch(), StubFetcher()))
+    response = client.post("/api/verify", json={"text": CLAIMS[0]})
+    assert response.status_code == 504
+    assert response.json()["error"]["code"] == "llm_timeout"
+    assert "claims" not in response.json()
+    assert calls == llm.request_count == 1
+    assert '"stage": "claim_extraction"' in caplog.text
+    assert '"category": "transport_timeout"' in caplog.text
+    for sensitive in ("test-only-secret", "private input", CLAIMS[0]):
+        assert sensitive not in response.text
+        assert sensitive not in caplog.text
 
 
 @pytest.mark.parametrize(

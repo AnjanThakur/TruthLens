@@ -1,5 +1,235 @@
 # Backend implementation and validation record
 
+## Gemini 503 recovery handling — 12 October 2026
+
+Captured 503s indicate intermittent upstream availability: the same model
+successfully transcribed audio and assessed image/PDF claims in the approved
+suite, but returned server errors for three small claim-extraction requests.
+No historical raw provider body is available to distinguish overload from
+another Google infrastructure problem. The suite had retries disabled by
+owner instruction. Existing production retries alone cannot guarantee recovery.
+
+Now explicitly use the documented stable `v1` Interactions route, with optional
+`GEMINI_API_VERSION=v1beta` compatibility setting. Add bounded 1/2-second backoff
+with jitter, preserve explicit Retry-After and prevent retry waits when the
+request's model-attempt budget is exhausted. Failed server-error attempts open
+a 15-second per-model local cooldown (or longer provider guidance) shared across
+transcription and verification, with the existing error code/status and
+Retry-After header. Daily quota stays separate and highest priority; stable
+`quota_exceeded` is recognized without relying on daily wording.
+
+PASS: **440 offline backend tests**, Ruff and application mypy (48 files),
+including exact public OpenAPI contract. No new Gemini/Tavily/Twilio calls,
+private configuration edits, database changes or WhatsApp operations during
+this repair before live approval.
+Stable routing removes unnecessary beta dependency; it is not proof that beta
+caused the 503s or that provider overload is eliminated. See
+[the detailed diagnosis](../docs/gemini-503-recovery-20261012.md).
+
+After explicit approval, **PASS**: stable `v1` returned HTTP 200 with a valid,
+nonempty, correctly anchored ClaimBatch at 20:28 IST in approximately 5.8 seconds.
+Actual usage **1 Gemini attempt, 0 Tavily calls, 0 Twilio sends**, no retry.
+Private capture: `demo-output/provider-recovery-20261012T145800133235Z.json`.
+This is successful provider/claim-extraction recovery, not a fresh full
+verification or a guarantee against future Google-side outages. Earlier
+five-format outcomes remain unchanged.
+
+## Restart and approved five-format suite — 12 October 2026
+
+PASS: owned backend and port-3001 preview restarted; health and homepage HTTP
+200. PASS: 67 targeted offline tests; actual local screenshot/PDF OCR returned
+nonempty text without warnings. After explicit budget approval, all five
+formats were attempted with **8 Gemini attempts, 4 Tavily attempts and 0 Twilio
+sends**, no retries and the existing 45-second model deadline.
+
+FAIL full live acceptance: text, audio and URL hit Gemini **503 / transient_server
+/ llm_provider_error** during claim extraction. Audio transcription itself
+passed. Screenshot and scanned-PDF extraction and assessment completed, but
+verification remained **Unconfirmed / Partial** with insufficient evidence and
+source retrieval warnings (image: HTTP 403; PDF: url_no_text/incomplete content).
+URL extraction passed with visible truncation; only the disclosed literal FAQ
+sentence was submitted for verification. No format was skipped and no successful
+complete verification is claimed.
+
+The separate actual image result is saved at
+`demo-output/image-result-20261012T144144365527Z.json`; the full suite report is
+`demo-output/formats-restart-20261012T144144365527Z.json`. Both are private and
+Git-ignored. See [the detailed format report](../docs/formats-restart-acceptance-20261012.md).
+Private configuration, database and WhatsApp state were preserved. The suite is
+finished; further provider attempts require new approval.
+
+## Evidence assessment timeout — 12 October 2026
+
+The approximately 12:40 IST request records `evidence_assessment / timeout /
+llm_timeout`, not a recorded 503, 429, quota or structured-response error.
+Historical payloads and exact article excerpts are unrecoverable from local
+artifacts. Blank copied source notes came from the unpopulated post-assessment
+`what_source_says` field; they do not establish that fetched `excerpt` values
+were empty. Code inspection and new mocked HTTP-envelope tests verify how
+excerpts, IDs, dates and provenance reach the provider.
+
+Removed a redundant generated paraphrase that the server always discarded,
+retained all quotation/verdict safeguards and the 45-second model deadline,
+and added complete prompt-size accounting, nonempty evidence gates and safe
+timestamp/size/elapsed/budget diagnostics. The UI and copied report now clearly
+distinguish retrieved evidence with failed AI assessment from absent evidence.
+
+PASS: **429 offline backend tests**, **65 frontend tests**, Ruff, application
+mypy (48 files), frontend typecheck and lint. The historical timeout's underlying
+remote cause is still unknown. During offline implementation no provider calls
+or WhatsApp operations were performed. A controlled
+capture script enforces at most one Gemini attempt and two Tavily attempts,
+including retries, with zero Twilio sends.
+
+See [the assessment investigation](../docs/assessment-failure-20261012.md) for
+the request ID, limitations, exact changes and approval-gated capture command.
+
+PASS: production frontend build and post-restart HTTP 200 checks for backend
+health (8000), preview health and homepage (localhost:3001). Only owned feature
+services were reloaded; private configuration and WhatsApp state were preserved.
+These health checks made no live verification requests.
+
+After explicit approval, one controlled live run at 19:49 IST consumed exactly
+**1 Gemini attempt, 2 Tavily attempts and 0 Twilio sends**, with no retries.
+FAIL: Gemini assessment returned HTTP **503 / transient_server /
+llm_provider_error** after **1,768 ms**. The fresh captured input contained
+three eligible, nonempty article excerpts (AP, TOI, BBC), with IDs, URLs and
+dates; input plus instructions plus schema totalled 25,876 characters against
+the existing 65,000 limit. PASS: sources were retained, the report explicitly
+explained assessment failure, and no unsupported verdict was accepted.
+Successful live assessment remains **BLOCKED** on provider availability and a
+new approved attempt. The Git-ignored capture is
+`demo-output/assessment-approved-20261012-controlled.json`; this fresh 503 does
+not retroactively explain the earlier timeout.
+
+## Gemini claim extraction latency — 12 October 2026
+
+Two real requests after the proxy message correction produced the same sanitized
+`claim_extraction / timeout / llm_timeout` event. The backend was running and
+healthy; the previous model deadline came from `EXTERNAL_TIMEOUT_SECONDS=20`.
+Gemini structured generation now has a separate bounded 45-second default;
+`LLM_TIMEOUT_SECONDS` may override it. Search and page fetches retain their
+existing 20-second setting, and the entire request remains capped at 180 seconds.
+Timeouts do not trigger model retries or unsupported verdicts.
+
+One short, explicit, unqualified English named-person death question or
+declaration is now parsed locally as a proposition. This saves the claim
+extraction model request for the reported Nana Patekar phrasing. All retrieved
+evidence, source eligibility, assessment and verdict guards remain in force.
+Qualified, compound, negated and ambiguous inputs still use Gemini. The local
+parser never treats a death proposition as an established fact.
+
+PASS: **418 offline backend tests**, including mocked claim parsing, Gemini
+timeouts, 503 recovery, daily quota, evidence-dependent support/contradiction,
+no-evidence unconfirmed and qualified-input guards. Ruff passes; application
+mypy passes for 48 files. The first full run omitted the local Tesseract
+`TESSDATA_DIR` setting and failed two Hindi/Marathi OCR tests; rerunning with
+the existing eng/hin/mar data produced 418/418 passes. A broader optional mypy
+run against utility scripts reports 15 pre-existing typing issues in four
+scripts; the app check is clean. Live success is still SKIPPED because no new
+Gemini/Tavily budget was approved. The longer timeout reduces premature
+failures but cannot guarantee a remote provider response.
+
+## Verification unavailable diagnostic — 12 October 2026
+
+The feature backend at port 8000 and the website proxy at localhost:3001 both
+returned HTTP 200 on `/api/health`. Port 3000 was not reachable during this check.
+The current backend log records `claim_extraction / timeout / llm_timeout`.
+The private configuration sets the shared external timeout to 20 seconds, with
+no separate LLM timeout. This is a provider response timeout, not evidence that
+the local backend is offline. Health checks do not establish provider readiness.
+
+The frontend proxy incorrectly mapped every upstream HTTP 5xx to
+`BACKEND_OFFLINE`. It now preserves HTTP 504 as the existing `TIMEOUT` category.
+Only the fixed public message is returned; provider bodies, request IDs and
+private diagnostics are not forwarded. No retry or additional provider call was
+introduced. No private configuration, database or WhatsApp state was modified.
+
+PASS: 18 targeted frontend proxy/client timeout tests; 30 mocked backend Gemini
+and quota/cache tests; frontend lint and TypeScript; backend Ruff for the changed
+regression file. The new API regression confirms a sanitized HTTP 504, one model
+attempt and zero search calls. Existing daily quota fail-fast and bounded HTTP
+503 retry regressions still pass. The production build passed and the owned
+port-3001 website was restarted with the existing private configuration.
+Live provider verification is SKIPPED: no new
+Gemini, Tavily or Twilio requests were made. Recovery of the remote Gemini
+response is not established by these offline checks.
+
+## Nana Patekar evidence investigation — 12 October 2026
+
+**PASS before edits:** 80 targeted backend tests and all 59 frontend tests.
+**PASS after repairs:** full backend **407 tests**, Ruff and mypy **48 source
+files**; frontend **62 unit tests**, lint, TypeScript, Prettier and production
+build. New Playwright source-ledger checks pass on **desktop and mobile (2 tests)**
+using isolated port 3103 and mocked responses. No live verification calls were
+made. The browser fixture initially had an ESM JSON-loading error and an
+incorrect service-notes locator; both were repaired and the final run passed.
+
+The six-source, zero-complete-reviewed result was caused by the deliberate
+all-other publisher classification gate, compounded by score-only namesake
+selection and independent-reporting discovery that could be replaced by a hoax
+query or omitted under a two-query budget. TOI news and scoped NDTV article paths
+now have secondary eligibility after the documented source-quality review.
+Wikipedia, YouTube, NBC and NDTV video pages remain unreviewed. Reuters/AP were
+already recognized. Search uses full entities and neutral reporting queries,
+with documented Reuters/AP/BBC domain preferences inside existing ceilings.
+Complete sources and distinct reviewed publishers survive selection. Exact
+fetched passages, page dates, IDs, completeness, subject-match and syndication
+flags reach evidence assessment; irrelevant named mortality subjects cannot
+establish support or conflict. Snippet-only verdicts remain prohibited.
+
+**Actual read-only checks:** NBC and TOI article bodies extracted successfully.
+NDTV video and the separately discovered AP article returned **HTTP 403 /
+access_denied**. The fetcher previously collapsed those into url_fetch_error with
+no category/status. Sanitized failure categories/status now reach diagnostics
+and the source ledger, without headers, bodies, keys or URL-query logging. A
+fresh YouTube check confirms its 145-character generic extraction is now
+**content_complete=false**. SSRF, publisher access controls, bounded downloads,
+date distinctions, verbatim citation checks and all six verdict guards remain.
+The UI separates incomplete, failed, snippet-only, irrelevant, unreviewed and
+assessed sources, and groups duplicate notices without deleting raw warnings.
+
+**SKIPPED:** real Gemini/Tavily verification rerun, because no new budget was
+approved. **FAIL/BLOCKED:** AP and NDTV downloads currently denied by those
+publishers; no bypass attempted. **NOT IMPLEMENTED:** remote video transcripts
+or JavaScript execution. The earlier four warning categories cannot be recovered
+from the owner's clipboard report; current downloads do not prove their exact
+historical causes. A specific Reuters October 8 URL was not located or invented.
+Private configuration and WhatsApp state remain unchanged; the worker is paused.
+
+Detailed findings and real public-source metadata:
+[acceptance report](../docs/nana-evidence-acceptance-20261012.md),
+[source checks](../docs/nana-source-checks-20261012.json), and
+[publisher review](../docs/publisher-quality-review-20261012.md).
+
+## Factual-question claim detection — 12 October 2026
+
+The owner reported that `did nana patekar died` and `did rajiv gandhi died`
+returned no claims. The extraction prompt previously requested factual assertions
+without making factual yes/no questions eligible. It now explicitly accepts
+factual questions in English, Hindi and Marathi, retains exact question spans,
+preserves qualifications, and separates a proposition to investigate from its
+answer. A narrow deterministic English death-question fallback recovers explicit
+named-subject intent only when a valid model response contains no claims. This
+also handles the reported informal `did ... died` grammar without a second model
+call. It does not establish death or choose a verdict. Dates, negation, fictional
+contexts, compound subjects and unresolved personal references are left to the
+model rather than guessed by this fallback.
+
+**PASS offline:** 25 new regressions, including both reported inputs, exact spans,
+claim caps, ordinary empty inputs, qualified questions, unchanged nonempty model
+output and quota-error propagation. Fictional retrieved support/contradiction
+fixtures determine verified/false outcomes; no retrieved evidence remains
+unconfirmed. Full backend pytest **375 passed**; Ruff and mypy **47 files PASS**.
+Existing OpenAPI contracts and six evidence guards remain unchanged.
+
+**NOT TESTED live:** new provider-backed answers for either named person. No live
+Gemini/Tavily request was submitted during diagnosis or testing. Existing keys
+remain enabled for the owner's manual website tests, and the consuming WhatsApp
+worker remains paused. Restarting the local backend loads the fix and clears its
+old in-memory no-claims cache. This section is newer than the pushed `b5d42d9`
+integration report; it does not fabricate a live factual verdict.
+
 ## Final provider-free regression — 12 October 2026
 
 **PASS:** full backend pytest **350 tests**, Ruff, mypy **47 source files**;

@@ -113,19 +113,21 @@ export async function upstream<T>(
   }
   if (!response.ok) {
     const code =
-      response.status === 409
-        ? 'ALERT_CONFLICT'
-        : response.status === 403
-          ? 'FORBIDDEN'
-          : response.status === 429
-            ? 'RATE_LIMIT'
-            : response.status === 413
-              ? 'UPLOAD_TOO_LARGE'
-              : response.status === 415
-                ? 'UNSUPPORTED_FILE'
-                : response.status >= 500
-                  ? 'BACKEND_OFFLINE'
-                  : 'BAD_INPUT';
+      response.status === 504
+        ? 'TIMEOUT'
+        : response.status === 409
+          ? 'ALERT_CONFLICT'
+          : response.status === 403
+            ? 'FORBIDDEN'
+            : response.status === 429
+              ? 'RATE_LIMIT'
+              : response.status === 413
+                ? 'UPLOAD_TOO_LARGE'
+                : response.status === 415
+                  ? 'UNSUPPORTED_FILE'
+                  : response.status >= 500
+                    ? 'BACKEND_OFFLINE'
+                    : 'BAD_INPUT';
     throw new ApiError(code, errorMessage(code), response.status);
   }
   const reader = response.body?.getReader();

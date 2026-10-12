@@ -19,7 +19,7 @@ from app.services.providers import GeminiLLM
         ("server", "llm_provider_error", "transient_server"),
         ("rejected", "llm_provider_error", "request_rejected"),
         ("invalid", "llm_output_invalid", "local_schema_validation"),
-        ("timeout", "llm_timeout", "timeout"),
+        ("timeout", "llm_timeout", "transport_timeout"),
         ("connection", "llm_provider_error", "connection"),
     ],
 )
@@ -67,8 +67,9 @@ async def test_provider_error_categories_are_safely_logged_without_raw_content(
             == {"auth": 401, "server": 503, "rejected": 400, "invalid": 200}[failure]
         )
     if failure == "invalid":
-        assert "bool_parsing" in events[0]["validation_types"]
-        assert "extra_forbidden" in events[0]["validation_types"]
+        validation = next(e for e in events if "validation_types" in e)
+        assert "bool_parsing" in validation["validation_types"]
+        assert "extra_forbidden" in validation["validation_types"]
     assert "fixture-secret" not in caplog.text and "private-input" not in caplog.text
     assert (
         "fixture-secret" not in error.value.message and "private-input" not in error.value.message

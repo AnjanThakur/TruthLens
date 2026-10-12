@@ -13,6 +13,12 @@ def guidance(error: Any) -> tuple[bool, int | None]:
     text = str(error).casefold()
     compact = re.sub(r"[^a-z]", "", text)
     daily = "perday" in compact or "daily" in compact or "per day" in text
+    body = getattr(error, "body", None)
+    if isinstance(body, dict):
+        detail = body.get("error", body)
+        if isinstance(detail, dict) and detail.get("code") == "quota_exceeded":
+            # Stable Interactions documents this code as the daily quota.
+            daily = True
     delay = None
     response = getattr(error, "response", None)
     if response is not None and (header := response.headers.get("retry-after")):

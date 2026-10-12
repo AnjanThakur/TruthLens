@@ -103,7 +103,12 @@ def test_latest_url_workflow_fails_at_assessment_not_input_extraction(settings, 
     assert evidence[PRIMARY]["excerpt_provenance"] == "fetched_page"
     assert evidence[INSTAGRAM]["excerpt_provenance"] == "search_excerpt"
     events = [r.truthlens_event for r in caplog.records if hasattr(r, "truthlens_event")]
-    error = next(e for e in events if e["stage"] == "evidence_assessment")
+    error = next(
+        e
+        for e in events
+        if e["stage"] == "evidence_assessment"
+        and e["category"] in {"transient_server", "local_schema_validation"}
+    )
     assert error["category"] == (
         "transient_server" if failure == "server" else "local_schema_validation"
     )

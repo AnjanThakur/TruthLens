@@ -18,7 +18,14 @@ import type { Verification, Explanation } from '@/lib/api/contracts';
 import { locale, stanceLabels, verdictLabels } from '@/lib/i18n';
 import { isSynthetic } from '@/lib/fixtures';
 import { usePreferences } from './preferences';
-import { relevantSources, warningText } from '@/lib/results';
+import {
+  assessmentFailed,
+  assessmentFailureText,
+  displayWarnings,
+  evidenceStateText,
+  relevantSources,
+  retrievalDiagnostic,
+} from '@/lib/results';
 const verdictIcons = {
   verified: CheckCircle2,
   false: XCircle,
@@ -65,6 +72,7 @@ export function Results({
         }).format(new Date(value))
       : t.noDate;
   const displayedSummary = explanation?.summary ?? result.summary;
+  const warnings = displayWarnings(result.warnings, language);
   const summary = [
     synthetic ? t.mock : '',
     displayedSummary,
@@ -76,7 +84,7 @@ export function Results({
         claim.explanation,
       ...claim.evidence.map(
         (e) =>
-          `${e.publisher} — ${e.title}\n${stanceLabels[language][e.stance]}: ${e.what_source_says}\n${t.published}: ${formatDate(e.published_at)}; ${t.retrieved}: ${formatDate(e.retrieved_at)}\n${e.url}`,
+          `${e.publisher} — ${e.title}\n${stanceLabels[language][e.stance]}: ${e.what_source_says || evidenceStateText(e, language, assessmentFailed(claim))}\n${!e.what_source_says && e.excerpt ? `${t.excerpt}: ${e.excerpt}\n` : ''}${t.published}: ${formatDate(e.published_at)}; ${t.retrieved}: ${formatDate(e.retrieved_at)}\n${e.url}`,
       ),
       ...claim.limitations,
       claim.next_step,
@@ -155,11 +163,11 @@ export function Results({
       {result.warnings.length > 0 && (
         <details className="service-notes">
           <summary>
-            {t.warnings} ({result.warnings.length})
+            {t.warnings} ({warnings.length})
           </summary>
           <ul>
-            {result.warnings.map((warning, i) => (
-              <li key={i}>{warningText(warning, language)}</li>
+            {warnings.map((warning, i) => (
+              <li key={i}>{warning}</li>
             ))}
           </ul>
         </details>
@@ -243,7 +251,9 @@ export function Results({
                     — {stanceLabels[language][source.stance]} · {formatDate(source.published_at)}
                   </p>
                 ))}
-                {!relevantSources(claim).length && <p>{t.noEvidence}</p>}
+                {!relevantSources(claim).length && (
+                  <p>{assessmentFailed(claim) ? assessmentFailureText(language) : t.noEvidence}</p>
+                )}
                 <details open={claim.evidence.length <= 3}>
                   <summary>
                     {language === 'en'
@@ -283,6 +293,12 @@ export function Results({
                         <strong>{t.says}: </strong>
                         {evidence.what_source_says || '—'}
                       </p>
+                      <p className="meta-line">
+                        {evidenceStateText(evidence, language, assessmentFailed(claim))}
+                      </p>
+                      {retrievalDiagnostic(evidence, language) && (
+                        <p className="meta-line">{retrievalDiagnostic(evidence, language)}</p>
+                      )}
                       {evidence.excerpt_provenance === 'search_excerpt' && (
                         <p className="meta-line">
                           {language === 'hi'
