@@ -1,5 +1,55 @@
 # Backend implementation and validation record
 
+## Final provider-free regression — 12 October 2026
+
+**PASS:** full backend pytest **350 tests**, Ruff, mypy **47 source files**;
+frontend **59 offline tests**, lint and TypeScript; adapter **140 offline tests**
+and Ruff. Existing OpenAPI compatibility regressions pass. Native OCR/media tests
+run locally; provider responses are fixtures. The runtime test harness now uses
+an isolated environment mapping, preventing newly introduced runtime secrets and
+test storage paths from leaking into subsequent alert tests. Windows sandbox
+event-loop hangs were resolved by rerunning offline tests in the approved host
+context, without relaxing application safeguards.
+
+The canonical preview is now `http://localhost:3001`. The WHO optional-source fix,
+callback no-cache handling and encrypted retention regression are implemented.
+No new live factual result was generated. Real hosted history/reviewer/isolation/
+cleanup/review/withdrawal checks remain **BLOCKED**; owner-reported sign-in is not
+an independently validated session. See [final integration handoff](../docs/final-integration-20261012.md).
+
+This phase: **0 Gemini, 0 Tavily, 0 WhatsApp sends**, four read-only Twilio GETs,
+zero hosted writes. The account is active Trial, current sender differs from the
+documented legacy Sandbox, and the existing Body-only failure remains 400/21654.
+The old dynamic-send artifacts are absent; an account/sender transition cannot
+be proven. Dynamic WhatsApp remains **BLOCKED** and is handed to the teammate.
+
+## Provider-free hosted integration follow-up — 11 October 2026
+
+Continued from feature commit `f0b0fce`; actual statuses and blockers are recorded
+in [the hosted follow-up](../docs/hosted-integration-followup.md) and
+[its acceptance JSON](../docs/hosted-integration-acceptance-20261011.json).
+
+The WHO partial-status cause was a blanket source-page warning rule. Retrieval
+failure provenance now distinguishes optional unreviewed snippet sources from
+required/incomplete investigation. A guarded decisive verdict can complete with
+an optional source warning still visible; trusted-source failure, missing excerpts,
+SSRF rejection, interrupted search and model errors remain partial. Existing
+citation/verdict/date guards, warning-free cache eligibility and alert ingestion
+gates are unchanged. Eight offline retrieval regressions and a durable encrypted
+retention regression cover the changes; no live verification was rerun.
+
+Targeted backend pytest: **192 PASS**. Frontend targeted authentication/history/RLS/
+consent tests: **24 PASS**. Ruff, mypy, frontend lint/typecheck/build: **PASS**.
+Preview 3001, existing site 3000, provider-disabled backend and publishing-disabled
+alert health: **PASS**. Callback redirects now explicitly prevent caching.
+Hosted signed-in callback, owner reviewer authorization, real history mutations,
+two-user isolation, cron execution and authenticated alert review/withdrawal:
+**BLOCKED** pending legitimate browser sessions, authentic unexpired receipts,
+administrator inspection and explicitly confirmed mutations. Anonymous access
+denial is verified; 404/PGRST205 on an anonymous reviewer probe is inconclusive
+about table existence. No hosted grants or writes were made. Gemini/Tavily/Twilio
+requests: **0/0/0**; WhatsApp worker paused and dynamic delivery **BLOCKED**.
+
 ## Latest full-system implementation (11 October 2026)
 
 **New approved live result:** one WHO text check through the actual website used **2 Gemini / 2 Tavily / 0 Twilio**. Grounded `verified` from two fetched WHO sources and website rendering **PASS**; strict complete-pipeline **FAIL** because a non-decisive Wikipedia page failed DNS resolution, leaving `status=partial`. No retry or second submission was made; controlled instances were stopped. See [actual result](../docs/live-website-acceptance-20261011.json). The pre-approval baseline and earlier records below are retained as history.

@@ -1,6 +1,7 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
 from dotenv import dotenv_values
 
 SPEC = importlib.util.spec_from_file_location(
@@ -8,6 +9,35 @@ SPEC = importlib.util.spec_from_file_location(
 )
 runtime = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(runtime)
+
+
+@pytest.fixture(autouse=True)
+def isolated_runtime_environment(monkeypatch):
+    # configure() intentionally mutates process environment. delenv() cannot undo
+    # a new key that was absent when the test began, so isolate the entire mapping.
+    monkeypatch.setattr(runtime.os, "environ", runtime.os.environ.copy())
+
+
+@pytest.mark.parametrize("host", ["localhost", "127.0.0.1"])
+def test_preview_origin_keeps_the_selected_cookie_host_and_port(host):
+    origin = f"http://{host}:3001"
+    assert runtime.website_origin(3001, origin) == origin
+    assert runtime.website_origin(3001) == "http://127.0.0.1:3001"
+
+
+@pytest.mark.parametrize(
+    "origin",
+    [
+        "http://localhost:3000",
+        "https://attacker.example",
+        "http://localhost:3001/auth/callback",
+        "http://user:secret@localhost:3001",
+        "http://localhost:3001?redirect=http://localhost:3000",
+    ],
+)
+def test_preview_origin_rejects_other_ports_paths_credentials_and_external_hosts(origin):
+    with pytest.raises(ValueError):
+        runtime.website_origin(3001, origin)
 
 
 def test_runtime_preserves_private_keys_and_absolutizes_original_whatsapp_state(
@@ -72,8 +102,6 @@ def test_runtime_default_blanks_provider_keys_and_local_secrets_survive_restart(
 
 
 def test_controlled_acceptance_has_process_wide_attempt_ceilings(monkeypatch):
-    import pytest
-
     from app.errors import AppError
 
     monkeypatch.setenv("GEMINI_API_KEY", "fixture-not-a-key")

@@ -1,5 +1,24 @@
 # Satyavaani / TruthLens: Twilio WhatsApp Sandbox
 
+**Current account follow-up, 12 October:** the configured sender differs from
+Twilio's documented legacy Sandbox sender. Read-only account/message API calls
+succeeded; the account is active Trial. The latest Body-only POST failed
+400/21654 and the selected ContentSid template reached the phone. Earlier dynamic
+delivery is recorded below, but its private transaction/configuration artifacts
+are absent from this checkout, so continuity with this account is unproven.
+See [teammate handoff](final-integration-20261012.md). Keep the consuming worker
+paused. Never copy a legacy sender into configuration without account eligibility
+and participation checks.
+
+Existing inbound message records also carry error 12300 (unsupported content
+type). The new trial explicitly forbids direct TwiML XML. After confirming that
+flow, `TWILIO_WEBHOOK_ACK_MODE=empty` selects an empty text/plain HTTP 200 instead
+of XML. The default `twiml` preserves legacy behavior; signed admission and
+durable deduplication are unchanged. This option passed offline tests only and
+has not been enabled in the private file or verified on a fresh live webhook.
+It does not unlock Body sends or generate a reply. The exact historical response
+that produced 12300 was not available from the message metadata.
+
 This is an additional **test-only transport**, preserving the existing Meta Cloud API adapter, Next.js website and Person 1 backend. It is not a WhatsApp Channel integration. A Channel publishes updates; this adapter receives private WhatsApp messages and replies in that chat.
 
 Status: **one fresh real Twilio delivery round trip through Person 1's backend passed**, reaching a signature-validated `read` callback and owner phone confirmation. The actual verification was **partial**, with an `unconfirmed` verdict, three neutral evidence entries and a source-page retrieval failure; full evidence/accuracy acceptance is still pending. The one-message worker stopped after one send attempt; automatic messaging remains disabled. Media, language and production acceptance also remain pending. The owner's existing Meta test WABA is restricted (131031, dashboard requests business verification). See [the gate record](whatsapp-gates.md) for actual test results.

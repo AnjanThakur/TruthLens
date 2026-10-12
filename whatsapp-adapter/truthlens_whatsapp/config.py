@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     twilio_whatsapp_number: str = ""
     twilio_public_base_url: str = ""
     twilio_development_content_sid: str = ""
+    twilio_webhook_ack_mode: str = "twiml"
     whatsapp_access_token: SecretStr = SecretStr("")
     whatsapp_phone_number_id: str = ""
     whatsapp_waba_id: str = ""
@@ -53,6 +54,8 @@ class Settings(BaseSettings):
             raise ValueError("Unsupported environment or response mode")
         if self.messaging_provider not in {"meta", "twilio"}:
             raise ValueError("Unsupported messaging provider")
+        if self.twilio_webhook_ack_mode not in {"twiml", "empty"}:
+            raise ValueError("Unsupported Twilio webhook acknowledgement mode")
         if self.messaging_provider == "meta":
             if (
                 not self.meta_app_secret.get_secret_value()

@@ -244,6 +244,7 @@ class Ledger:
                 provenance = "search_excerpt"
                 retrieved_at = now()
                 final_url = url
+                failure_code: str | None = None
                 try:
                     fetched, extracted = await self._page(url)
                     final_url = fetched.url
@@ -276,12 +277,20 @@ class Ledger:
                     provenance = "fetched_page"
                 except AppError as exc:
                     warnings.append("source_page_unavailable:" + exc.code)
+                    failure_code = exc.code
                     # Unsafe addresses are not even retained as usable snippets.
                     if exc.code == "unsafe_url":
+                        warnings.append("source_page_required_unavailable:unsafe_url")
                         return None
                 if not excerpt.strip():
+                    if failure_code:
+                        warnings.append("source_page_required_unavailable:" + failure_code)
                     return None
                 publisher, kind, basis = identity(final_url)
+                if failure_code:
+                    basis += "; source_fetch_failure=" + failure_code
+                    if kind != "other":
+                        warnings.append("source_page_required_unavailable:" + failure_code)
                 if incomplete:
                     basis += "; incomplete_content: The fetched article/document did not provide full content."
                 return Evidence(

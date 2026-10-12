@@ -1,10 +1,24 @@
 # Scam Alert Intelligence: Person 2 handoff
 
+## Latest provider-free hosted follow-up
+
+See [hosted integration follow-up](hosted-integration-followup.md) and
+[actual acceptance statuses](hosted-integration-acceptance-20261011.json).
+Port 3001 uses the original Supabase project and private signing key, with its own
+canonical callback origin. Callback redirects now have private/no-store caching.
+The local dashboard has zero clusters/drafts and publishing remains disabled.
+Reviewer allowlist and consent/review/withdrawal/retention checks pass offline;
+hosted owner reviewer authorization and authenticated mutations remain BLOCKED.
+Anonymous 404/PGRST205 is not proof that `alert_reviewers` is absent. The read-only
+owner preflight is `supabase/checks/integration-readonly.sql`. No hosted migration,
+grant, test report, fake contributor or draft was inserted. The warning-free alert
+eligibility gate remains unchanged by the optional-source status correction.
+
 ## Current integrated implementation (11 October 2026)
 
 The website now provides explicit signed-report contribution consent, withdrawal and authenticated role-gated `/alerts` review with manual draft creation/edit/submit/approve/reject. Role identity and stable source/submission pseudonyms are derived server-side, not accepted from the browser. Configure server-only `ALERTS_BASE_URL`, `ALERTS_INGEST_TOKEN`, `ALERTS_ADMIN_TOKEN`, and stable `ALERTS_SOURCE_SECRET`, alongside existing Supabase/history settings. The Windows runner shares these privately between the website and isolated alert service.
 
-New additive migration `supabase/migrations/202610110003_alert_reviewers.sql` creates only a reviewer role allowlist; existing Person 2 report tables are untouched. A project administrator must apply it and grant selected existing auth users. The hosted read-only preflight returned **404/PGRST205**; authenticated review is blocked until that action and a real session check. Ordinary authenticated users have read-own-role only and cannot self-grant roles.
+New additive migration `supabase/migrations/202610110003_alert_reviewers.sql` creates only a reviewer role allowlist; existing Person 2 report tables are untouched. An administrator should first inspect whether it is applied and whether the selected existing Auth user has a grant. The anonymous preflight returned **404/PGRST205**, which does not establish table absence. Applying a missing migration or adding a selected reviewer grant requires confirmation; neither was performed. Authenticated review remains blocked pending a real session and authorization check. Ordinary authenticated users have read-own-role only and cannot self-grant roles.
 
 Set paired `ALERTS_DATABASE_PATH` and `ALERTS_ENCRYPTION_KEY` for the new encrypted SQLite repository; preserve the original key across restarts/backups. Memory remains the unconfigured/default test implementation. Local durable storage is separate from WhatsApp and Supabase history. BEGIN IMMEDIATE transactions serialize repository instances; ciphertext stores minimized redacted observations, drafts and receipts. New persistence regressions cover restart/withdrawal, rollback, wrong keys and concurrent instances.
 

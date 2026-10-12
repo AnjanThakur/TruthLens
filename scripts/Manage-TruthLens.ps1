@@ -5,10 +5,12 @@ param(
     [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot),
     [string]$PrivateRoot = '',
     [ValidateRange(1024,65535)][int]$WebsitePort = 3000,
+    [string]$WebsiteOrigin = '',
     [switch]$EnableProviders,
     [switch]$ControlledAcceptance
 )
 $ErrorActionPreference = 'Stop'
+if ($WebsiteOrigin -and $WebsiteOrigin -notin @("http://localhost:$WebsitePort", "http://127.0.0.1:$WebsitePort")) { throw 'WebsiteOrigin must match the local website port.' }
 if ($ControlledAcceptance -and @($Services | Where-Object { $_ -notin @('backend','website') }).Count) { throw 'Controlled acceptance supports only backend and website.' }
 $project = (Resolve-Path -LiteralPath $ProjectRoot).Path
 if (-not $PrivateRoot) {
@@ -59,6 +61,7 @@ if ($Action -in @('start','restart')) {
         $python = Get-Python $service
         $checkArgs = @($runner,'--project',$project,'--private',$private,'--service',$service,'--check')
         if ($service -eq 'website') { $checkArgs += @('--port',[string]$WebsitePort) }
+        if ($service -eq 'website' -and $WebsiteOrigin) { $checkArgs += @('--website-origin',$WebsiteOrigin) }
         if ($EnableProviders -and $service -eq 'backend') { $checkArgs += '--providers-enabled' }
         if ($ControlledAcceptance) { $checkArgs += '--controlled-acceptance'; if ($service -eq 'backend') { $checkArgs += @('--port','8002') } }
         $check = (& $python @checkArgs) | ConvertFrom-Json
@@ -70,6 +73,7 @@ foreach ($service in $Services) {
     $python = Get-Python $service
     $argsList = @($runner,'--project',$project,'--private',$private,'--service',$service)
     if ($service -eq 'website') { $argsList += @('--port', [string]$WebsitePort) }
+    if ($service -eq 'website' -and $WebsiteOrigin) { $argsList += @('--website-origin', $WebsiteOrigin) }
     if ($EnableProviders -and $service -eq 'backend') { $argsList += '--providers-enabled' }
     if ($ControlledAcceptance) { $argsList += '--controlled-acceptance'; if ($service -eq 'backend') { $argsList += @('--port','8002') } }
     if ($Action -eq 'check') { & $python @argsList --check; if ($LASTEXITCODE -ne 0) { throw "Preflight failed for $service. No process was started." }; continue }

@@ -124,6 +124,39 @@ async def test_signed_webhook_worker_reply_and_delivery(twilio_settings, inbound
             assert "offline-twilio-auth-token" not in client.get("/health").text
 
 
+@pytest.mark.parametrize("mode", ["twiml", "empty"])
+def test_webhook_ack_modes_preserve_signature_and_durable_deduplication(
+    twilio_settings, inbound, mode
+):
+    twilio_settings.twilio_webhook_ack_mode = mode
+    store = Store(twilio_settings)
+    with TestClient(create_app(twilio_settings, store)) as client:
+        bad_headers = signed(twilio_settings, inbound)
+        bad_headers["X-Twilio-Signature"] = "invalid"
+        assert client.post(PATH, content=urlencode(inbound), headers=bad_headers).status_code == 403
+        assert store.claim() is None
+        for _ in range(2):
+            response = client.post(
+                PATH, content=urlencode(inbound), headers=signed(twilio_settings, inbound)
+            )
+            assert response.status_code == 200
+            assert response.text == ("<Response/>" if mode == "twiml" else "")
+            assert response.headers["content-type"].startswith(
+                "application/xml" if mode == "twiml" else "text/plain"
+            )
+        with store.tx() as db:
+            assert store.execute(db, "SELECT COUNT(*) AS n FROM jobs").fetchone()["n"] == 1
+            assert store.execute(db, "SELECT COUNT(*) AS n FROM outbox").fetchone()["n"] == 0
+
+
+def test_webhook_ack_mode_rejects_unsupported_configuration(twilio_settings):
+    with pytest.raises(ValidationError, match="acknowledgement mode"):
+        Settings(
+            **{**twilio_settings.model_dump(), "twilio_webhook_ack_mode": "arbitrary"},
+            _env_file=None,
+        )
+
+
 @pytest.mark.parametrize(
     "change", ["signature", "body", "account", "recipient", "media_host", "query"]
 )

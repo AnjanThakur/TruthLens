@@ -220,11 +220,22 @@ def acceptance_app():
     return create_app(settings, llm, search), llm, search
 
 
+def website_origin(port: int, value: str | None = None) -> str:
+    """Keep local preview callbacks and CSRF checks on one explicit loopback origin."""
+    origin = value or f"http://127.0.0.1:{port}"
+    if origin not in {f"http://127.0.0.1:{port}", f"http://localhost:{port}"}:
+        raise ValueError("Website origin must match the local website port")
+    return origin
+
+
 def run(args) -> None:
     project = Path(args.project).resolve()
     private = private_root(project, args.private)
     service = args.service
     port = args.port if args.port is not None else SERVICES[service][1]
+    origin = website_origin(port, args.website_origin) if service == "website" else ""
+    if args.website_origin and service != "website":
+        raise ValueError("Website origin is only valid for the website service")
     if args.controlled_acceptance and service not in {"backend", "website"}:
         raise ValueError("Controlled acceptance is backend/website only")
     result = preflight(
@@ -269,7 +280,7 @@ def run(args) -> None:
     if service == "website":
         if args.controlled_acceptance:
             os.environ["BACKEND_BASE_URL"] = "http://127.0.0.1:8002"
-        os.environ["APP_ORIGIN"] = f"http://127.0.0.1:{port}"
+        os.environ["APP_ORIGIN"] = origin
         command = [
             shutil.which("node"),
             str(directory / "node_modules" / "next" / "dist" / "bin" / "next"),
@@ -386,6 +397,7 @@ if __name__ == "__main__":
     parser.add_argument("--private")
     parser.add_argument("--service", choices=SERVICES, required=True)
     parser.add_argument("--port", type=int)
+    parser.add_argument("--website-origin")
     parser.add_argument("--instance")
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--providers-enabled", action="store_true")

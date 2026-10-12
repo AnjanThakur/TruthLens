@@ -1,5 +1,26 @@
 # TruthLens full-system acceptance - 11 October 2026
 
+**Latest, 12 October:** [final integration and teammate handoff](final-integration-20261012.md)
+and [actual status JSON](final-integration-20261012.json) supersede current-origin
+and test counts below: backend 350, adapter 140, frontend 59 offline tests PASS.
+Current preview is localhost:3001. No new provider calls or WhatsApp sends.
+Dynamic delivery and hosted authenticated acceptance remain BLOCKED; no public
+production deployment exists. Earlier live results below remain historical.
+
+## Latest provider-free integration follow-up
+
+See [actual hosted follow-up statuses](hosted-integration-acceptance-20261011.json)
+and [changes, verification and owner steps](hosted-integration-followup.md).
+The port-3001 preview reuses the original project/private signing key and now
+prevents caching auth callback redirects. The WHO optional-source status rule is
+corrected with warnings and evidence guards retained. Targeted offline checks:
+192 backend tests, 24 frontend tests, Ruff, mypy, lint, typecheck and build PASS.
+No new provider calls or remote writes. Hosted authenticated history/reviewer/
+retention/alert mutations remain BLOCKED by the documented prerequisites; an
+anonymous reviewer 404 does not prove the table is missing. The original live WHO
+result below remains unchanged. The following full-system baseline predates this
+follow-up and is retained as historical evidence.
+
 Branch: `feature/scam-alert-intelligence`. Tested implementation commit: `9f16d4c4e70f2da218ec82b6def200cf29108a0f`.
 Worktree: `D:\HackOnTrack-TruthLens\.worktrees\scam-alert-intelligence`.
 The final documentation commit is additional; use `git rev-parse HEAD` for the delivered tip.
@@ -12,8 +33,8 @@ Main and the owner's uncommitted changes/private configuration were preserved. N
 | Backend extraction, investigation and guards | **PASS** - 334 tests; Ruff; mypy 47 files; pip compatibility; exact existing OpenAPI contract | **PASS** for one grounded live text decision; strict pipeline **FAIL** (partial DNS limitation); other formats **NOT TESTED** |
 | Website | **PASS** - 53 unit/contract/RLS tests, 24 desktop/mobile/accessibility checks, six production-proxy browser checks; lint/typecheck/format/build | **PASS** for actual local HTTP/proxy health and honest provider-disabled errors; one grounded factual result **PASS**; strict pipeline **FAIL** (partial) |
 | Supabase private history | **PASS** for isolated actual SQL ownership/RLS tests and local configuration presence; hosted anonymous read rejected 401/42501 | Authenticated sign-in/save/list/delete **NOT TESTED**; no email sent or existing table modified |
-| Hosted alert reviewer authorization | **PASS** for additive SQL RLS and server role tests | **BLOCKED** - read-only REST returned 404/PGRST205 for `alert_reviewers`; migration/role grant needed |
-| Scam alerts | **PASS** - encrypted isolated persistence/restart/withdrawal; evidence-gated recurrence/drafts/review; website consent and authenticated server proxies | Authenticated hosted contribution/review **BLOCKED** by missing reviewer table; real consented records **NOT TESTED** |
+| Hosted alert reviewer authorization | **PASS** for additive SQL RLS and server role tests | **BLOCKED** - anonymous REST returned 404/PGRST205; authenticated/administrator inspection needed before inferring table absence or changing grants |
+| Scam alerts | **PASS** - encrypted isolated persistence/restart/withdrawal; evidence-gated recurrence/drafts/review; website consent and authenticated server proxies | Authenticated hosted contribution/review **BLOCKED** pending legitimate session, reviewer authorization and genuine consented records |
 | WhatsApp inbound | **PASS**, previously proven signed webhook HTTP 200 and durable queue; all offline signature/state/command regressions pass | New inbound **NOT TESTED** this phase |
 | WhatsApp development template | **PASS**, prior HTTP 201 + actual delivered state + signed callback + owner phone receipt | No new outbound attempt this phase |
 | WhatsApp dynamic fact-check report | Formatter/backend integration **PASS** offline | **BLOCKED** by confirmed trial ContentSid restriction; fixed template is not a dynamic report |

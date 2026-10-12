@@ -1,0 +1,14 @@
+{
+  "base_commit": "f0b0fce",
+  "branch": "feature/scam-alert-intelligence",
+  "date": "2026-10-12",
+  "usage": {"gemini_attempts": 0, "tavily_attempts": 0, "whatsapp_sends": 0, "twilio_read_only_gets": 4, "remote_writes": 0},
+  "offline": {"backend": {"status": "PASS", "tests": 350}, "adapter": {"status": "PASS", "tests": 140}, "frontend": {"status": "PASS", "tests": 59}, "ruff": "PASS", "mypy": "PASS", "frontend_lint": "PASS", "frontend_typecheck": "PASS"},
+  "preview": {"origin": "http://localhost:3001", "status": "PASS", "connected_authenticated_list": "BLOCKED", "observed_message": "Sign in to access your private history.", "owner_sign_in": "OWNER_REPORTED", "providers_enabled": false, "worker_started": false},
+  "whatsapp": {"dynamic": "BLOCKED", "prior_dynamic_phone_receipt": "PASS_HISTORICAL", "earlier_transaction_artifacts": "UNAVAILABLE", "recorded_body_rejection": {"http_status": 400, "numeric_code": 21654}, "template_phone_receipt": "PASS_HISTORICAL", "current_account_read": {"http_status": 200, "type": "Trial", "state": "active", "matches_config": true}, "sender_matches_documented_legacy_sandbox": false, "message_history": {"records": 10, "inbound": 7, "outbound_read": 3, "dynamic_marker_present": 0, "inbound_numeric_code": 12300, "further_page": false}, "empty_webhook_ack": "PASS_OFFLINE_NOT_ENABLED_OR_LIVE_TESTED", "meta": "BLOCKED"},
+  "hosted": {"history_save_delete": "BLOCKED", "user_isolation": "BLOCKED", "reviewer_authorization": "BLOCKED", "retention_job": "BLOCKED", "consented_alert_review_withdrawal": "BLOCKED", "verification_reports_migration": "OWNER_REPORTED_APPLIED"},
+  "new_live_scenarios": {"verified": "NOT_TESTED", "false": "NOT_TESTED", "unconfirmed": "NOT_TESTED", "image": "NOT_TESTED", "voice": "NOT_TESTED", "hindi_marathi": "NOT_TESTED", "reliability": "NOT_TESTED"},
+  "who_optional_retrieval": {"regressions": "PASS", "new_live": "SKIPPED", "warnings_preserved": true, "guards_preserved": true},
+  "production_deployment": "NOT_IMPLEMENTED",
+  "original_private_files_and_database": "PRESERVED"
+}

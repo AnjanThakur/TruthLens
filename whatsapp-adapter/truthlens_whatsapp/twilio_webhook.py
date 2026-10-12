@@ -112,8 +112,11 @@ async def inbound(request: Request):
         ) from exc
     except (ValueError, KeyError, TypeError) as exc:
         raise HTTPException(400, "Invalid inbound message") from exc
-    # Acknowledge immediately. Actual replies come from the durable worker, not
-    # synchronous TwiML that could repeat paid verification on webhook retries.
+    # The new Try out WhatsApp trial rejects direct TwiML XML. Its acknowledgement
+    # carries no instructions; actual sends still require the existing worker gates.
+    # Preserve the legacy Sandbox's empty TwiML by default.
+    if config.twilio_webhook_ack_mode == "empty":
+        return Response(status_code=200, media_type="text/plain")
     return Response("<Response/>", media_type="application/xml")
 
 

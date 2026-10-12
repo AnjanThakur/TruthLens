@@ -307,7 +307,7 @@ def test_readable_primary_source_survives_unreadable_social_page(settings):
         .json()
     )
     claim = result["claims"][0]
-    assert result["status"] == "partial" and claim["verdict"] == "verified"
+    assert result["status"] == "completed" and claim["verdict"] == "verified"
     assert "source_page_unavailable:url_no_text" in result["warnings"]
     assert claim["evidence"][0]["url"] == PRIMARY and FAQ_CLAIM in claim["evidence"][0]["excerpt"]
     assert claim["evidence"][1]["url"] == INSTAGRAM and claim["evidence"][1]["stance"] == "unclear"

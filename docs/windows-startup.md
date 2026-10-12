@@ -1,5 +1,19 @@
 # Windows startup and controlled acceptance
 
+For the owner's port-3001 preview, consistently use `http://localhost:3001`:
+
+```powershell
+& .\scripts\Manage-TruthLens.ps1 -Action start -Services @('backend','alerts','website') -WebsitePort 3001 -WebsiteOrigin 'http://localhost:3001'
+```
+
+`-WebsiteOrigin` accepts only localhost or 127.0.0.1 with the selected port. It
+sets the child process's APP_ORIGIN without changing private configuration.
+Keep the original port-3000 callback allowed in Supabase; the additional preview
+callback is `http://localhost:3001/auth/callback`. Cookies are host scoped, while
+mutation Origin checks remain port specific. Hosted sign-in still needs to be
+confirmed in the browser being tested. Commands below retain the default
+127.0.0.1 origin for other installations.
+
 Use the feature worktree on this laptop. Do not copy a checkout over existing private configuration/state.
 
 ```powershell

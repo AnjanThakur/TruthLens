@@ -433,14 +433,29 @@ class Verifier:
                 limitations.append(
                     "No complete, reviewed fetched evidence is available for a decisive assessment. Missing or weak evidence does not establish that the claim is false."
                 )
-            if any(
+            optional_failures = {
+                "source_page_unavailable:"
+                + e.authority_basis.split("source_fetch_failure=", 1)[1].split(";", 1)[0]
+                for e in evidence
+                if e.source_type == "other"
+                and e.excerpt_provenance == "search_excerpt"
+                and "source_fetch_failure=" in e.authority_basis
+            }
+            retrieval_incomplete = any(
                 w.startswith(
                     ("search_", "source_page_unavailable", "llm_", "source_content_incomplete")
                 )
+                and not (verdict != "unconfirmed" and w in optional_failures)
                 for w in warnings
-            ):
+            ) or any(w.startswith("source_page_required_unavailable:") for w in warnings)
+            if retrieval_incomplete:
                 result.status = "partial"
                 limitations.append("Some search queries or source pages were unavailable.")
+            elif optional_failures:
+                limitations.append(
+                    "An optional unreviewed source page was unavailable. Its search excerpt "
+                    "did not establish the verdict; the retrieval warning remains in the report."
+                )
             lexical = re.sub(r"\s+", " ", normalize(atomic.claim_text).casefold()).strip()
             claim = ClaimResult(
                 claim_text=atomic.claim_text,

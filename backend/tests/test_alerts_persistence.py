@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -39,6 +39,38 @@ def test_restart_encryption_and_withdrawal(tmp_path):
     assert record.claims[0].claim_text.encode() not in path.read_bytes()
     restarted.withdraw(source)
     assert not AlertEngine(settings, clock=lambda: instant).clusters()
+
+
+def test_retention_purge_is_durable_after_restart(tmp_path):
+    settings = AlertsSettings(
+        _env_file=None,
+        ingest_token="i" * 40,
+        admin_token="a" * 40,
+        pseudonym_secret="p" * 40,
+        database_path=str(tmp_path / "retention.sqlite3"),
+        encryption_key=Fernet.generate_key().decode(),
+    )
+    instant = datetime(2026, 10, 11, 8, tzinfo=UTC)
+    original = AlertEngine(settings, clock=lambda: instant)
+    for language in ("en", "hi", "mr"):
+        original.ingest(
+            IngestRequest(
+                consent=True,
+                source_token=str(uuid4()),
+                submission_id=uuid4(),
+                verification=fixture_record(instant, language),
+            )
+        )
+    with original.repository.transaction() as state:
+        assert len(state.observations) == len(state.receipts) == 3
+        assert state.clusters and state.drafts
+    expired = instant + timedelta(days=settings.retention_days + 1)
+    restarted = AlertEngine(settings, clock=lambda: expired)
+    assert restarted.purge() == 3
+    again = AlertEngine(settings, clock=lambda: expired)
+    with again.repository.transaction() as state:
+        assert not state.observations and not state.receipts
+        assert not state.clusters and not state.drafts
 
 
 def test_atomic_rollback_and_key_mismatch_fail_closed(tmp_path):
