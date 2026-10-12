@@ -42,7 +42,7 @@ def provider_failure(status=503, retry_after=None):
     )
 
 
-@pytest.mark.parametrize("retry_after,expected_wait", [(None, 0.5), ("2", 2)])
+@pytest.mark.parametrize("retry_after,expected_wait", [(None, 1), ("2", 2)])
 async def test_real_audio_adapter_recovers_from_503_without_changing_audio(
     settings, monkeypatch, caplog, retry_after, expected_wait
 ):
@@ -54,6 +54,7 @@ async def test_real_audio_adapter_recovers_from_503_without_changing_audio(
         waits.append(seconds)
 
     monkeypatch.setattr("app.services.providers.asyncio.sleep", sleep)
+    monkeypatch.setattr("app.services.providers.retry_wait", lambda attempt: min(2, 2**attempt))
 
     def handler(request):
         calls.append(json.loads(request.content))
@@ -68,14 +69,18 @@ async def test_real_audio_adapter_recovers_from_503_without_changing_audio(
     assert calls[0] == calls[1]
     audio = calls[0]["input"][0]["content"][0]
     assert audio["mime_type"] == "audio/wav" and base64.b64decode(audio["data"]) == wav_bytes()
-    event = next(r.truthlens_event for r in caplog.records if hasattr(r, "truthlens_event"))
+    event = next(
+        r.truthlens_event
+        for r in caplog.records
+        if hasattr(r, "truthlens_event") and r.truthlens_event["category"] == "transient_retry"
+    )
     assert event["stage"] == "transcription" and event["category"] == "transient_retry"
     assert event["provider_http_status"] == 503 and event["attempt"] == 1
     assert "fixture-secret" not in caplog.text and "private speech" not in caplog.text
 
 
 @pytest.mark.parametrize(
-    "attempts,wait_budget,expected_waits", [(1, 3, []), (2, 3, [0.5]), (3, 3, [0.5, 1]), (3, 0, [])]
+    "attempts,wait_budget,expected_waits", [(1, 3, []), (2, 3, [1]), (3, 3, [1, 2]), (3, 0, [])]
 )
 async def test_persistent_audio_503_is_bounded_and_retains_sanitized_diagnostics(
     settings, monkeypatch, caplog, attempts, wait_budget, expected_waits
@@ -90,6 +95,7 @@ async def test_persistent_audio_503_is_bounded_and_retains_sanitized_diagnostics
         waits.append(seconds)
 
     monkeypatch.setattr("app.services.providers.asyncio.sleep", sleep)
+    monkeypatch.setattr("app.services.providers.retry_wait", lambda attempt: min(2, 2**attempt))
     provider = GeminiLLM(settings, httpx.MockTransport(lambda r: provider_failure()))
     with pytest.raises(AppError) as error:
         await MediaExtractor(settings, provider=provider).extract(wav_bytes())
@@ -170,8 +176,12 @@ async def test_audio_timeout_remains_bounded_and_safely_classified(settings, cap
     assert error.value.code == "transcription_provider_error" and error.value.status == 504
     assert provider.request_count == 1 and "timed out" in error.value.message
     assert "fixture-secret" not in caplog.text + error.value.message
-    event = next(r.truthlens_event for r in caplog.records if hasattr(r, "truthlens_event"))
-    assert event["stage"] == "transcription" and event["category"] == "timeout"
+    event = next(
+        r.truthlens_event
+        for r in caplog.records
+        if hasattr(r, "truthlens_event") and r.truthlens_event["code"] == "llm_timeout"
+    )
+    assert event["stage"] == "transcription" and event["category"] == "transport_timeout"
 
 
 @pytest.mark.parametrize("fallback", [False, True])

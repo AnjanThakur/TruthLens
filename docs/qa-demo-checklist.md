@@ -17,7 +17,7 @@ These are UI/adapter tests, not real fact-checks or provider accuracy tests. SQL
 
 ## Live acceptance when services arrive
 
-- [ ] Confirm P1 OpenAPI revision and all provisional decisions.
+- [ ] Confirm P1 OpenAPI revision and the reconciliation in person2-contract-reconciliation.md.
 - [ ] Long forward produces multiple independently justified claims with actual sources.
 - [ ] Real screenshot, audio, PDF/scanned page and URL all extract real text, allow review and verify.
 - [ ] ₹500 currency forward uses actual RBI evidence retrieved by P1; no scripted verdict.
@@ -29,3 +29,7 @@ These are UI/adapter tests, not real fact-checks or provider accuracy tests. SQL
 - [ ] Confirm HTTPS, host upload/time limits, shared rate limits, minimal logging and provider privacy disclosures.
 
 Until live checks pass, describe the result as a tested frontend/integration implementation, not a completed live verification service.
+
+## Required WhatsApp acceptance
+
+Follow `whatsapp-gates.md`: demonstrate actual signed receipt and delivered development reply first, then an approved real backend sourced reply. Offline fixtures are never evidence of delivery or factual accuracy. Media, provider-key rotation and production eligibility must each be recorded honestly.

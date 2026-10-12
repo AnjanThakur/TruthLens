@@ -1,0 +1,193 @@
+{
+  "scope": "Independently labeled fictional policy fixtures. No page was fetched and no Gemini prediction is evaluated. Source text and authority annotations are test inputs, not real-world citations.",
+  "metric_interpretation": "Small deterministic guard-policy conformance set. Expected labels are independent of the adversarial proposal file. These metrics do not measure Gemini, real search quality, or population factual accuracy.",
+  "status": "PASS",
+  "cases": [
+    {
+      "id": "supported",
+      "expected": "verified",
+      "actual": "verified",
+      "status": "PASS",
+      "source_justification": "The primary fixture explicitly establishes the exact centre and time."
+    },
+    {
+      "id": "contradicted",
+      "expected": "false",
+      "actual": "false",
+      "status": "PASS",
+      "source_justification": "A primary fixture explicitly says it remains open on Sundays."
+    },
+    {
+      "id": "qualified",
+      "expected": "partially_true",
+      "actual": "partially_true",
+      "status": "PASS",
+      "source_justification": "The opening time is supported, while the every-day qualification is explicitly contradicted."
+    },
+    {
+      "id": "superseded",
+      "expected": "outdated",
+      "actual": "outdated",
+      "status": "PASS",
+      "source_justification": "Two distinct dated event witnesses establish the earlier time and the replacement time."
+    },
+    {
+      "id": "scope_omitted",
+      "expected": "misleading_context",
+      "actual": "misleading_context",
+      "status": "PASS",
+      "source_justification": "The fixture limits the benefit to previously registered eligible visitors; the omitted restriction changes the meaning."
+    },
+    {
+      "id": "unknown",
+      "expected": "unconfirmed",
+      "actual": "unconfirmed",
+      "status": "PASS",
+      "source_justification": "No record establishes this prediction. No evidence is not contradiction."
+    },
+    {
+      "id": "conflict",
+      "expected": "unconfirmed",
+      "actual": "unconfirmed",
+      "status": "PASS",
+      "source_justification": "Two equally scoped fixture records directly disagree without a correction or supersession date."
+    },
+    {
+      "id": "fake_support",
+      "expected": "unconfirmed",
+      "actual": "unconfirmed",
+      "status": "PASS",
+      "source_justification": "An unreviewed publisher repeating a claim cannot make a decisive source."
+    },
+    {
+      "id": "inaccessible",
+      "expected": "unconfirmed",
+      "actual": "unconfirmed",
+      "status": "PASS",
+      "source_justification": "A search snippet cannot substitute for an inaccessible complete source page; production also marks this as partial processing."
+    },
+    {
+      "id": "wrong_subject",
+      "expected": "unconfirmed",
+      "actual": "unconfirmed",
+      "status": "PASS",
+      "source_justification": "The source concerns Another Centre. Publisher authority cannot repair subject mismatch."
+    },
+    {
+      "id": "hindi_contradiction",
+      "expected": "false",
+      "actual": "false",
+      "status": "PASS",
+      "source_justification": "The Hindi fixture explicitly establishes Sunday opening, without treating language or risk as proof."
+    },
+    {
+      "id": "marathi_support",
+      "expected": "verified",
+      "actual": "verified",
+      "status": "PASS",
+      "source_justification": "The Marathi fixture establishes the exact opening time."
+    },
+    {
+      "id": "syndication",
+      "expected": "unconfirmed",
+      "actual": "unconfirmed",
+      "status": "PASS",
+      "source_justification": "Three copies from unreviewed blogs still do not establish authoritative evidence or independent corroboration."
+    },
+    {
+      "id": "unsupported_component",
+      "expected": "unconfirmed",
+      "actual": "unconfirmed",
+      "status": "PASS",
+      "source_justification": "An overconfident verified proposal contains an explicitly unestablished component. The complete claim is not supported."
+    }
+  ],
+  "categories": {
+    "verified": {
+      "support": 2,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "false": {
+      "support": 2,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "partially_true": {
+      "support": 1,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "outdated": {
+      "support": 1,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "misleading_context": {
+      "support": 1,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "unconfirmed": {
+      "support": 7,
+      "precision": 1.0,
+      "recall": 1.0
+    }
+  },
+  "confusion_matrix": {
+    "verified": {
+      "verified": 2,
+      "false": 0,
+      "partially_true": 0,
+      "outdated": 0,
+      "misleading_context": 0,
+      "unconfirmed": 0
+    },
+    "false": {
+      "verified": 0,
+      "false": 2,
+      "partially_true": 0,
+      "outdated": 0,
+      "misleading_context": 0,
+      "unconfirmed": 0
+    },
+    "partially_true": {
+      "verified": 0,
+      "false": 0,
+      "partially_true": 1,
+      "outdated": 0,
+      "misleading_context": 0,
+      "unconfirmed": 0
+    },
+    "outdated": {
+      "verified": 0,
+      "false": 0,
+      "partially_true": 0,
+      "outdated": 1,
+      "misleading_context": 0,
+      "unconfirmed": 0
+    },
+    "misleading_context": {
+      "verified": 0,
+      "false": 0,
+      "partially_true": 0,
+      "outdated": 0,
+      "misleading_context": 1,
+      "unconfirmed": 0
+    },
+    "unconfirmed": {
+      "verified": 0,
+      "false": 0,
+      "partially_true": 0,
+      "outdated": 0,
+      "misleading_context": 0,
+      "unconfirmed": 7
+    }
+  },
+  "abstention_rate": 0.5,
+  "provider_requests": {
+    "gemini": 0,
+    "tavily": 0,
+    "twilio": 0
+  }
+}

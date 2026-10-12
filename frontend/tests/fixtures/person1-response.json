@@ -1,0 +1,72 @@
+{
+  "verification_id": "00000000-0000-0000-0000-000000000001",
+  "status": "completed",
+  "input": {
+    "text": "A fictional test claim.",
+    "input_type": "text",
+    "detected_language": "en",
+    "warnings": [],
+    "extraction_details": {}
+  },
+  "summary": "OFFLINE TEST RESPONSE, not a real fact-check.",
+  "checked_at": "2026-10-11T08:32:15.694559+00:00",
+  "warnings": [],
+  "response_language": "en",
+  "audience": "adult",
+  "claims": [
+    {
+      "claim_id": "00000000-0000-0000-0000-000000000001",
+      "claim_text": "A fictional test claim.",
+      "original_span": "A fictional test claim.",
+      "entities": [],
+      "dates": [],
+      "qualifiers": [],
+      "normalized_claim": "a fictional test claim.",
+      "lexical_hash": "test",
+      "verdict": "unconfirmed",
+      "grounded_explanation": "No conclusion established in this offline test.",
+      "explanation": "No conclusion established in this offline test.",
+      "short_summary": "Unconfirmed test",
+      "key_points": [],
+      "next_step": "Check real sources.",
+      "limitations": ["Offline test"],
+      "checked_at": "2026-10-11T08:32:15.694559+00:00",
+      "risk": {
+        "score": 0,
+        "level": "low",
+        "factors": [],
+        "is_probability": false,
+        "label": "Not a probability"
+      },
+      "temporal_context": {
+        "claim_date": null,
+        "relevant_source_dates": [],
+        "notes": ""
+      },
+      "original_context": {
+        "status": "not_checked",
+        "notes": "",
+        "source_urls": []
+      },
+      "evidence": [
+        {
+          "evidence_id": "00000000-0000-0000-0000-000000000001",
+          "title": "Offline source fixture",
+          "url": "https://example.test/source",
+          "publisher": "Fictional test publisher",
+          "source_type": "other",
+          "published_at": null,
+          "updated_at": null,
+          "retrieved_at": "2026-10-11T08:32:15.694559+00:00",
+          "stance": "unclear",
+          "excerpt": "Offline evidence fixture.",
+          "excerpt_provenance": "search_excerpt",
+          "what_source_says": "Offline evidence fixture.",
+          "authority_basis": "Unestablished fixture",
+          "relevance_score": 0,
+          "directly_relevant": false
+        }
+      ]
+    }
+  ]
+}

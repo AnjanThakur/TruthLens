@@ -10,3 +10,12 @@ coverage/
 !.env.example
 
 *.log
+
+# Private local diagnostics and account screenshots.
+.tmp/
+frontend/test-results/
+frontend/playwright-report/
+*.tsbuildinfo
+
+__pycache__/
+*.pyc

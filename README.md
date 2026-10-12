@@ -1,6 +1,17 @@
 # TruthLens AI
 
+> **Current implementation update (11 October 2026):** the full feature implementation and current test/live boundaries are recorded in [full-system acceptance](docs/final-full-system-acceptance.md), with [Windows startup](docs/windows-startup.md). Earlier counts and pending UI statements below are historical. Current offline checks: backend 334, adapter 137, frontend 53, browser 24 and production proxy 6; all passed. The one approved live text result rendered a grounded Verified verdict but remained partial after a source DNS failure; additional provider-backed acceptance needs new approval; dynamic WhatsApp remains blocked by the trial account.
+
+
 Person 2's Next.js application for reviewing forwarded claims, original evidence and honest uncertainty. The original Word execution plan in `TruthLens_Person2_Codex_Package` is the primary authority. Person 1's AI/backend code is intentionally a separate service.
+
+Current collaborator handoff: [remaining work, APIs, private configuration and startup](docs/current-integration-handoff.md). Read it before older gate reports, which include historical blockers.
+
+Combined delivery branch: `feature/scam-alert-intelligence` contains the saved Person 2 work and the scam-alert feature. The combination was prepared on `integration/person2-scam-intelligence`, then fast-forwarded into the existing scam branch at the owner's request. See [merge validation and what remains to connect](docs/combined-integration.md). The alert service is separate; merging source does not automatically add a dashboard or chatbot consent/alert commands.
+
+For a single-file collaborator package, read [START-HERE](START-HERE.md). Run `py -3.12 scripts/build_handoff.py` to build `dist/handoff/TruthLens-Friend-Handoff.zip` from current working files. It includes code, requirements, API schemas and setup templates; private configuration, chat state, screenshots, dependencies and Git history are excluded. This does not commit or push changes.
+
+Latest Person 2 work: [local acceptance results and controlled test commands](docs/person2-local-acceptance.md). Both the production website proxy and adapter can be tested locally with mocked services while Person 1 finishes evidence quality.
 
 ## Start the local synthetic demo
 
@@ -16,7 +27,7 @@ Open http://localhost:3000. Select **Use this example**, then **Check the facts*
 
 ## Connect Person 1 and optional history
 
-Copy `frontend/.env.example` to `frontend/.env.local`. Set `BACKEND_BASE_URL` and negotiated authentication if needed. Keep both mock flags false. Start with `npm run dev`. Review `docs/api-contract.md` with Person 1 before live sign-off.
+Copy `frontend/.env.example` to `frontend/.env.local`. Set `BACKEND_BASE_URL` and negotiated authentication if needed. Keep both mock flags false. Start with `npm run dev`. Review `docs/backend-api-contract.md`, `docs/backend-openapi.json` and `docs/person2-contract-reconciliation.md` with Person 1 before live sign-off. The earlier `docs/api-contract.md` is a superseded provisional contract.
 
 For private history, configure the Supabase URL and publishable key, a random server-only `HISTORY_SIGNING_SECRET` (at least 32 characters), and `APP_ORIGIN`. Apply the SQL migrations in `supabase/migrations` to your own project, enable email sign-in and allow the callback URL. No service-role key is needed. Detailed setup: `docs/person2-setup.md`.
 
@@ -49,4 +60,8 @@ Database security tests execute the actual base migration in isolated PostgreSQL
 
 `npm run build` then `npm start` serves the production application. Fixture APIs are disabled under production even if mock flags were mistakenly enabled. A live FastAPI service is required for real verification; synthetic examples are never evidence of live accuracy.
 
-The current live integration and HTTPS deployment remain pending: the user confirmed that Person 1's backend and Supabase are not yet available. See `docs/gate-status.md` for exact tested scope and `docs/deployment.md` for deployment and release gates. G5 tracker, radar, public sharing and WhatsApp integration are deferred.
+Person 1's backend code is present and the website contract is reconciled with its actual APIs. WhatsApp is a required deliverable implemented as the separate `whatsapp-adapter/` service. One fresh Twilio Sandbox message passed through the backend and its reply reached signed `read` status, confirmed on the owner's phone. Its verification was partial/unconfirmed because source retrieval was incomplete. Continuous replies remain disabled; live website acceptance, full media/language checks, hosted history and production deployment remain pending. See `docs/current-integration-handoff.md`, `docs/whatsapp-gates.md` and `docs/twilio-sandbox-setup.md`. The earlier `docs/gate-status.md` records historical website checks. Tracker/radar/public sharing remain deferred.
+
+## Required WhatsApp connector
+
+The adapter validates signed webhooks, durably deduplicates/encrypts jobs, retrieves Meta media, calls the existing P1 APIs and formats source-linked replies. Its defaults disable live Meta sending and provider calls. Run `python -m truthlens_whatsapp.offline_demo` from its installed environment for a network-free routing demonstration. This does not prove actual WhatsApp delivery. See its README for setup, approval boundaries and commands.

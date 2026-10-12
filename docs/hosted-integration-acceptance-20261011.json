@@ -1,0 +1,69 @@
+{
+  "scope": "Provider-free hosted integration follow-up from f0b0fce",
+  "observed_at": "2026-10-11T18:22:44Z",
+  "provider_requests": { "gemini": 0, "tavily": 0, "twilio": 0 },
+  "runtime": {
+    "preview_3001": "PASS",
+    "existing_3000": "PASS",
+    "owner_supabase_configuration_reused": "PASS",
+    "owner_history_signing_key_preserved": "PASS",
+    "preview_origin": "http://127.0.0.1:3001",
+    "callback_missing_code": {
+      "status": "PASS", "http_status": 307,
+      "location": "http://127.0.0.1:3001/history?auth=failed",
+      "cache_control": "no-store, private"
+    },
+    "authenticated_callback_and_cookie_roundtrip": "BLOCKED",
+    "gemini_tavily_disabled": "PASS",
+    "whatsapp_worker": "PAUSED",
+    "dynamic_whatsapp_delivery": "BLOCKED"
+  },
+  "hosted_supabase": {
+    "verification_reports_migration": "OWNER_REPORTED_APPLIED",
+    "anonymous_history_access": { "status": "PASS", "http_status": 401, "code": "42501" },
+    "anonymous_reviewer_probe": {
+      "http_status": 404, "code": "PGRST205",
+      "interpretation": "Not sufficient to prove a missing table; authenticated or administrator inspection required."
+    },
+    "owner_reviewer_authorization": "BLOCKED",
+    "authenticated_history_list": "BLOCKED",
+    "authenticated_history_save_delete": "BLOCKED",
+    "two_authenticated_users_isolation": "BLOCKED",
+    "scheduled_retention_cleanup": "BLOCKED",
+    "remote_writes": 0
+  },
+  "alerts": {
+    "local_service_health": "PASS",
+    "local_service_authenticated_reads": "PASS",
+    "anonymous_service_denial": "PASS",
+    "clusters": 0, "drafts": 0, "publishing": false,
+    "hosted_user_review_and_withdrawal": "BLOCKED",
+    "live_contributions_reviews_withdrawals": 0,
+    "offline_consent_review_withdrawal_retention": "PASS"
+  },
+  "who_verification": {
+    "previous_actual_live_status": "partial",
+    "previous_actual_verdict": "verified",
+    "previous_strict_live_acceptance": "FAIL",
+    "root_cause": "A blanket source retrieval warning rule marked every unavailable page as partial, including an unreviewed Wikipedia page not used as decisive evidence.",
+    "new_offline_optional_failure_regression": "PASS",
+    "new_live_verification": "SKIPPED",
+    "warnings_retained": true,
+    "citation_evidence_guards_unchanged": true,
+    "alert_warning_free_gate_unchanged": true
+  },
+  "offline_validation": {
+    "backend_targeted_pytest": { "status": "PASS", "tests": 192 },
+    "frontend_targeted_tests": { "status": "PASS", "tests": 24 },
+    "ruff": "PASS", "mypy": "PASS", "frontend_lint": "PASS",
+    "frontend_typecheck": "PASS", "frontend_build": "PASS"
+  },
+  "blockers": [
+    "No authenticated owner session is available in the connected browser; earlier port-3000 browser is not connected.",
+    "Real history save requires an unexpired genuine website-issued receipt. Recorded WHO JSON contains no receipt; receipts expire after one hour. None was manufactured.",
+    "Hosted mutations need the owner's explicit confirmation. No remote roles, report rows, retention jobs or auth redirect settings were changed.",
+    "Second legitimate authenticated user is needed for hosted cross-user isolation.",
+    "Administrator read-only inspection is needed for reviewer migration and cron schedule/run status.",
+    "No genuine eligible consented scam contributions or draft are present; dashboard review and withdrawal cannot be claimed as hosted successes."
+  ]
+}

@@ -15,6 +15,14 @@ export function POST(request: Request) {
   return route(async () => {
     requireSameOrigin(request);
     const input = await readJson(request, verifyRequestSchema);
+    const stamp = request.headers.get('x-truthlens-message-time');
+    if (
+      stamp &&
+      (stamp.length > 64 ||
+        !/(?:Z|[+-]\d{2}:\d{2})$/.test(stamp) ||
+        Number.isNaN(Date.parse(stamp)))
+    )
+      throw new ApiError('BAD_INPUT', 'Use a valid original message timestamp.', 400);
     if (isMockMode()) {
       const fixture = fixtures.find(
         (f) =>
@@ -26,7 +34,10 @@ export function POST(request: Request) {
     }
     const result = await upstream('/api/verify', verificationSchema, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(stamp ? { 'X-TruthLens-Message-Time': stamp } : {}),
+      },
       body: JSON.stringify(input),
       signal: request.signal,
     });

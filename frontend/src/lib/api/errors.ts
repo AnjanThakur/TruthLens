@@ -8,6 +8,8 @@ export class ApiError extends Error {
   }
 }
 export const errors: Record<string, string> = {
+  ALERT_CONFLICT:
+    'This candidate changed or expired. Refresh and review its current evidence before trying again.',
   MOCK_INPUT:
     'Synthetic mode only demonstrates the supplied examples. Restore the sample text, or connect the live backend to verify your own input.',
   BACKEND_OFFLINE: 'The verification service is unavailable. Please try again later.',

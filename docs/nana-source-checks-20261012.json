@@ -1,0 +1,149 @@
+{
+  "date": "2026-10-12",
+  "kind": "read_only_public_source_checks",
+  "gemini_calls": 0,
+  "tavily_calls": 0,
+  "twilio_calls": 0,
+  "historical_failure_categories": "not retained in owner clipboard report",
+  "baseline": {
+    "provider_calls": 0,
+    "source_checks": [
+      {
+        "url": "https://en.wikipedia.org/wiki/Nana_Patekar",
+        "publisher_type": "other",
+        "status": "PASS",
+        "final_url": "https://en.wikipedia.org/wiki/Nana_Patekar",
+        "text_chars": 19904,
+        "complete": true,
+        "extraction": "precision",
+        "published_at": "2004-09-27T05:14:07Z",
+        "warnings": [],
+        "entity_present": true
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Nana_(manga)",
+        "publisher_type": "other",
+        "status": "PASS",
+        "final_url": "https://en.wikipedia.org/wiki/Nana_(manga)",
+        "text_chars": 35183,
+        "complete": true,
+        "extraction": "precision",
+        "published_at": "2004-02-29T15:47:55Z",
+        "warnings": [],
+        "entity_present": false
+      },
+      {
+        "url": "https://www.nbcnews.com/news/obituaries/indian-actor-filmmaker-nana-patekar-dies-75-rcna602244",
+        "publisher_type": "other",
+        "status": "PASS",
+        "final_url": "https://www.nbcnews.com/news/obituaries/indian-actor-filmmaker-nana-patekar-dies-75-rcna602244",
+        "text_chars": 1642,
+        "complete": true,
+        "extraction": "precision",
+        "published_at": "2026-10-08T09:56:07.717Z",
+        "warnings": [],
+        "entity_present": true
+      },
+      {
+        "url": "https://www.ndtv.com/video/nana-patekar-death-news-nana-patekar-bollywood-s-krantiveer-dies-of-cardiac-arrest-at-75-1171310",
+        "publisher_type": "other",
+        "status": "FAIL",
+        "code": "url_fetch_error",
+        "category": null,
+        "http_status": null
+      },
+      {
+        "url": "https://timesofindia.indiatimes.com/entertainment/hindi/bollywood/news/nana-patekar-passes-away-nana-patekar-death-news-celebes-reactions-nana-patekar-funeral/liveblog/134778310.cms",
+        "publisher_type": "other",
+        "status": "PASS",
+        "final_url": "https://timesofindia.indiatimes.com/entertainment/hindi/bollywood/news/nana-patekar-passes-away-nana-patekar-death-news-celebes-reactions-nana-patekar-funeral/liveblog/134778310.cms",
+        "text_chars": 19038,
+        "complete": true,
+        "extraction": "precision",
+        "published_at": "2026-10-08T07:59:01+05:30",
+        "warnings": [],
+        "entity_present": true
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=ylD2-xjh7ts",
+        "publisher_type": "other",
+        "status": "PASS",
+        "final_url": "https://www.youtube.com/watch?v=ylD2-xjh7ts",
+        "text_chars": 145,
+        "complete": true,
+        "extraction": "recall",
+        "published_at": "2026-10-08T09:16:37-07:00",
+        "warnings": [
+          "article_short_content: Only a short passage was extracted; review its completeness."
+        ],
+        "entity_present": false
+      },
+      {
+        "url": "https://apnews.com/article/a1f8495501327d5c7949173c7a14b55c",
+        "publisher_type": "secondary",
+        "status": "FAIL",
+        "code": "url_fetch_error",
+        "category": null,
+        "http_status": null
+      }
+    ]
+  },
+  "sanitized_failure_diagnosis": {
+    "provider_calls": 0,
+    "source_checks": [
+      {
+        "url": "https://www.ndtv.com/video/nana-patekar-death-news-nana-patekar-bollywood-s-krantiveer-dies-of-cardiac-arrest-at-75-1171310",
+        "publisher_type": "other",
+        "status": "FAIL",
+        "code": "url_fetch_error",
+        "category": "access_denied",
+        "http_status": 403
+      },
+      {
+        "url": "https://apnews.com/article/a1f8495501327d5c7949173c7a14b55c",
+        "publisher_type": "secondary",
+        "status": "FAIL",
+        "code": "url_fetch_error",
+        "category": "access_denied",
+        "http_status": 403
+      }
+    ]
+  },
+  "live_verification": "SKIPPED: no approved provider budget",
+  "post_fix_youtube": {
+    "provider_calls": 0,
+    "source_checks": [
+      {
+        "url": "https://www.youtube.com/watch?v=ylD2-xjh7ts",
+        "publisher_type": "other",
+        "status": "PASS",
+        "final_url": "https://www.youtube.com/watch?v=ylD2-xjh7ts",
+        "text_chars": 145,
+        "complete": false,
+        "extraction": "recall",
+        "published_at": "2026-10-08T09:16:37-07:00",
+        "warnings": [
+          "article_short_content: Only a short passage was extracted; review its completeness."
+        ],
+        "entity_present": false
+      }
+    ]
+  },
+  "checks": {
+    "backend_pytest": "PASS: 407",
+    "ruff": "PASS",
+    "mypy": "PASS: 48 files",
+    "frontend_unit": "PASS: 62",
+    "frontend_lint": "PASS",
+    "frontend_types": "PASS",
+    "browser_fixture": "PASS: desktop/mobile 2",
+    "production_build": "PASS"
+  },
+  "local_preview": {
+    "status": "PASS",
+    "origin": "http://localhost:3001",
+    "health": "ok",
+    "verification_calls": "not requested",
+    "whatsapp_worker": "paused"
+  }
+}

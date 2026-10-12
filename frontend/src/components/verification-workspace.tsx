@@ -21,6 +21,7 @@ import {
 import { z } from 'zod';
 import { usePreferences } from './preferences';
 import { Results } from './results';
+import { AlertContribution } from './alert-contribution';
 import { fixtures } from '@/lib/fixtures';
 import { extractFile, extractUrl, verify, explain, request, jsonRequest } from '@/lib/api/client';
 import {
@@ -33,7 +34,8 @@ import {
   type InputType,
   type Explanation,
 } from '@/lib/api/contracts';
-import { acceptedTypes, validateFile } from '@/lib/api/files';
+import { acceptedTypes, validateFile, MAX_UPLOAD_BYTES } from '@/lib/api/files';
+import { extractionChunks } from '@/lib/api/chunks';
 import { ApiError, errorMessage } from '@/lib/api/errors';
 import { uiError } from '@/lib/i18n/errors';
 type Phase = 'idle' | 'validating' | 'extracting' | 'review' | 'verifying' | 'results';
@@ -103,9 +105,15 @@ function Preview({ file, kind }: { file: File; kind: InputType }) {
 export function VerificationWorkspace({
   mock,
   historyEnabled,
+  alertsEnabled = false,
+  whatsappUrl,
+  maxUploadBytes = MAX_UPLOAD_BYTES,
 }: {
   mock: boolean;
   historyEnabled: boolean;
+  alertsEnabled?: boolean;
+  whatsappUrl?: string | null;
+  maxUploadBytes?: number;
 }) {
   const { language, easy, t } = usePreferences();
   const metadataLabels: Record<string, string> = {
@@ -125,6 +133,7 @@ export function VerificationWorkspace({
   const [reviewText, setReviewText] = useState('');
   const [result, setResult] = useState<Verification | null>(null);
   const [receipt, setReceipt] = useState<string | null>(null);
+  const [messageTime, setMessageTime] = useState('');
   const [error, setError] = useState('');
   const [selectedFixture, setSelectedFixture] = useState(0);
   const [explanation, setExplanation] = useState<Explanation | null>(null);
@@ -145,7 +154,13 @@ export function VerificationWorkspace({
     const abort = new AbortController();
     if (!mock)
       request('/api/health', healthSchema, { signal: abort.signal })
-        .then((h) => setHealth(h.capabilities?.verify === false ? 'offline' : 'live'))
+        .then((h) =>
+          setHealth(
+            h.capabilities?.claim_verification === false || h.capabilities?.verify === false
+              ? 'offline'
+              : 'live',
+          ),
+        )
         .catch(() => {
           if (!abort.signal.aborted) setHealth('offline');
         });
@@ -172,6 +187,7 @@ export function VerificationWorkspace({
   function changeType(next: InputType) {
     if (busy) return;
     setType(next);
+    setMessageTime('');
     setFile(null);
     setExtraction(null);
     setReviewText('');
@@ -199,7 +215,7 @@ export function VerificationWorkspace({
   function selectFile(next?: File) {
     if (!next || busy) return;
     try {
-      validateFile(next, type);
+      validateFile(next, type, maxUploadBytes);
       setFile(next);
       setError('');
       setExtraction(null);
@@ -214,7 +230,9 @@ export function VerificationWorkspace({
     changeType(sample.verification.input.input_type);
     setText(sample.verification.input.text);
     if (sample.verification.input.input_type === 'url')
-      setUrl(String(sample.extraction?.metadata?.url ?? 'https://example.org/mock-article'));
+      setUrl(
+        String(sample.extraction?.extraction_details?.url ?? 'https://example.org/mock-article'),
+      );
     if (sample.extraction) {
       setExtraction(sample.extraction);
       setReviewText(sample.extraction.text);
@@ -235,7 +253,7 @@ export function VerificationWorkspace({
         if (type === 'url') publicUrlSchema.parse(url);
         else {
           if (!file) throw new ApiError('BAD_INPUT', 'Choose a file first.');
-          validateFile(file, type);
+          validateFile(file, type, maxUploadBytes);
         }
         setPhase('extracting');
         const extracted =
@@ -246,24 +264,23 @@ export function VerificationWorkspace({
         if (extracted.text.trim().length < 10)
           throw new ApiError('EXTRACTION_EMPTY', errorMessage('EXTRACTION_EMPTY'));
         setExtraction(extracted);
-        setReviewText(extracted.text);
+        setReviewText(extracted.extraction_details.text_is_preview === true ? '' : extracted.text);
         setPhase('review');
       } else {
         const input = verifyRequestSchema.parse({
           text: type === 'text' ? text : reviewText,
           input_type: type,
-          ...(extraction
-            ? {
-                detected_language: extraction.detected_language,
-                source_metadata: {
-                  ...extraction.metadata,
-                  user_edited: reviewText !== extraction.text,
-                },
-              }
-            : {}),
+          input_language: 'auto',
+          response_language: language,
+          audience: easy ? 'senior' : 'adult',
+          jurisdiction: 'IN',
         });
         setPhase('verifying');
-        const verified = await verify(input, abort.signal);
+        const verified = await verify(
+          input,
+          abort.signal,
+          messageTime ? new Date(messageTime).toISOString() : undefined,
+        );
         if (abort.signal.aborted) return;
         setResult(verified.result);
         setReceipt(verified.receipt);
@@ -320,7 +337,8 @@ export function VerificationWorkspace({
     }
   }
   const currentExplanation =
-    explanation?.language === language && explanation.audience === (easy ? 'easy' : 'standard')
+    explanation?.response_language === language &&
+    explanation.audience === (easy ? 'senior' : 'adult')
       ? explanation
       : null;
   return (
@@ -336,6 +354,22 @@ export function VerificationWorkspace({
           <span>{t.headlineAccent}</span>
         </h1>
         <p>{t.intro}</p>
+        {whatsappUrl && (
+          <p>
+            <a
+              className="button secondary"
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {language === 'hi'
+                ? 'WhatsApp पर जाँचें'
+                : language === 'mr'
+                  ? 'WhatsApp वर तपासा'
+                  : 'Check on WhatsApp'}
+            </a>
+          </p>
+        )}
         <div className="hero-detail">
           <ShieldCheck size={17} aria-hidden="true" />
           <span>
@@ -437,14 +471,38 @@ export function VerificationWorkspace({
                         }
                       }}
                       placeholder={t.placeholder}
-                      maxLength={30000}
+                      maxLength={24000}
                       rows={7}
                       required
                       aria-describedby="privacy-note text-count"
                     />
                     <span className="character-count" id="text-count">
-                      {text.length.toLocaleString()} / 30,000
+                      {text.length.toLocaleString()} / 24,000
                     </span>
+                    <label htmlFor="message-time">
+                      {language === 'hi'
+                        ? 'मूल संदेश का समय (वैकल्पिक)'
+                        : language === 'mr'
+                          ? 'मूळ संदेशाची वेळ (पर्यायी)'
+                          : 'Original message time (optional, your local timezone)'}
+                    </label>
+                    <input
+                      id="message-time"
+                      type="datetime-local"
+                      value={messageTime}
+                      disabled={busy}
+                      onChange={(event) => {
+                        setMessageTime(event.target.value);
+                        clearResult();
+                      }}
+                    />
+                    <p className="meta-line">
+                      {language === 'en'
+                        ? 'Helps interpret “tomorrow” or “next Monday”. If unknown, relative dates use the time of this check.'
+                        : language === 'hi'
+                          ? '“अगले सोमवार” का अर्थ स्पष्ट करता है। समय न मिलने पर जाँच के समय का उपयोग होता है।'
+                          : '“पुढील सोमवार”चा अर्थ स्पष्ट होतो. मूळ वेळ माहीत नसल्यास तपासणीची वेळ वापरली जाते.'}
+                    </p>
                   </>
                 )}
                 {type === 'url' && (
@@ -479,7 +537,14 @@ export function VerificationWorkspace({
                     >
                       <UploadCloud size={32} aria-hidden="true" />
                       <strong>{t.dropFile}</strong>
-                      <span>{t.formats}</span>
+                      <span>
+                        {t.formats.replace(
+                          '10',
+                          (maxUploadBytes / 1048576).toLocaleString(language, {
+                            maximumFractionDigits: 3,
+                          }),
+                        )}
+                      </span>
                       <span className="file-formats">
                         {type === 'image'
                           ? 'JPEG · PNG · WebP'
@@ -506,12 +571,46 @@ export function VerificationWorkspace({
                     {t.reviewTitle}
                   </h3>
                   <p>{t.reviewHelp}</p>
+                  {extraction.extraction_details.text_is_preview === true && (
+                    <div className="notice chunk-review">
+                      <p>
+                        {language === 'hi'
+                          ? 'यह केवल पूर्वावलोकन है। जाँचने के लिए पृष्ठ का एक भाग चुनें। परिणाम केवल चुने हुए भाग के लिए है।'
+                          : language === 'mr'
+                            ? 'हा फक्त पूर्वावलोकन आहे. तपासणीसाठी पानाचा एक भाग निवडा. निकाल फक्त निवडलेल्या भागासाठी आहे.'
+                            : 'This is a document preview. Select a page chunk to check. Each result covers only the selected text, not the whole PDF.'}
+                      </p>
+                      <label htmlFor="page-chunk">{t.pages}</label>
+                      <select
+                        id="page-chunk"
+                        defaultValue=""
+                        disabled={busy}
+                        onChange={(e) => {
+                          const chunk = extractionChunks(extraction)[Number(e.target.value)];
+                          if (chunk) {
+                            setReviewText(chunk.text);
+                            clearResult();
+                            setPhase('review');
+                          }
+                        }}
+                      >
+                        <option value="" disabled>
+                          —
+                        </option>
+                        {extractionChunks(extraction).map((chunk, i) => (
+                          <option key={i} value={i}>
+                            {t.pages} {chunk.page_number ?? '—'} · {i + 1}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div className="extraction-meta">
                     <span>
                       {t.language}: {extraction.detected_language}
                     </span>
-                    {extraction.metadata &&
-                      Object.entries(extraction.metadata)
+                    {extraction.extraction_details &&
+                      Object.entries(extraction.extraction_details)
                         .filter(
                           ([key, value]) =>
                             [
@@ -548,7 +647,7 @@ export function VerificationWorkspace({
                       setPhase('review');
                     }}
                     disabled={busy}
-                    maxLength={30000}
+                    maxLength={24000}
                     rows={6}
                   />
                   {reviewText !== extraction.text && <p className="edited-notice">{t.edited}</p>}
@@ -687,6 +786,9 @@ export function VerificationWorkspace({
                 </>
               )}
               {saveStatus && <p role="status">{saveStatus}</p>}
+              {alertsEnabled && receipt && !mock && (
+                <AlertContribution key={result.verification_id} result={result} receipt={receipt} />
+              )}
             </section>
           )}
         </div>

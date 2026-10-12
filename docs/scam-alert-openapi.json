@@ -1,0 +1,1849 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "TruthLens Scam Alert Intelligence",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ]
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alerts/ingest": {
+      "post": {
+        "summary": "Ingest",
+        "operationId": "ingest_api_alerts_ingest_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/alerts/withdraw": {
+      "post": {
+        "summary": "Withdraw",
+        "operationId": "withdraw_api_alerts_withdraw_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "type": "object",
+                  "title": "Response Withdraw Api Alerts Withdraw Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/alerts/clusters": {
+      "get": {
+        "summary": "Clusters",
+        "operationId": "clusters_api_alerts_clusters_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Cluster"
+                  },
+                  "type": "array",
+                  "title": "Response Clusters Api Alerts Clusters Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/alerts/drafts": {
+      "get": {
+        "summary": "Drafts",
+        "operationId": "drafts_api_alerts_drafts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AlertDraft"
+                  },
+                  "type": "array",
+                  "title": "Response Drafts Api Alerts Drafts Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/alerts/purge": {
+      "post": {
+        "summary": "Purge",
+        "operationId": "purge_api_alerts_purge_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "type": "object",
+                  "title": "Response Purge Api Alerts Purge Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/alerts/clusters/{cluster_id}/drafts": {
+      "post": {
+        "summary": "Create Draft",
+        "operationId": "create_draft_api_alerts_clusters__cluster_id__drafts_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cluster_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Cluster Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDraft"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alerts/{alert_id}": {
+      "patch": {
+        "summary": "Edit",
+        "operationId": "edit_api_alerts__alert_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDraft"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alerts/{alert_id}/submit": {
+      "post": {
+        "summary": "Submit",
+        "operationId": "submit_api_alerts__alert_id__submit_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDraft"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alerts/{alert_id}/approve": {
+      "post": {
+        "summary": "Approve",
+        "operationId": "approve_api_alerts__alert_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDraft"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alerts/{alert_id}/reject": {
+      "post": {
+        "summary": "Reject",
+        "operationId": "reject_api_alerts__alert_id__reject_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDraft"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alerts/{alert_id}/export": {
+      "get": {
+        "summary": "Export",
+        "operationId": "export_api_alerts__alert_id__export_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportPayload"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AlertDraft": {
+        "properties": {
+          "alert_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Alert Id"
+          },
+          "cluster_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Cluster Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "claim_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claim Summary"
+          },
+          "evidence_based_status": {
+            "type": "string",
+            "enum": [
+              "claim_contradicted",
+              "claim_needs_context",
+              "suspicious_indicators"
+            ],
+            "title": "Evidence Based Status"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "scam_warning_signs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scam Warning Signs"
+          },
+          "recommended_user_actions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommended User Actions"
+          },
+          "authoritative_source_links": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Authoritative Source Links"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "hi",
+              "mr"
+            ],
+            "title": "Language"
+          },
+          "language_content_status": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "pending_translation"
+            ],
+            "title": "Language Content Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "last_verified_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Verified At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "approval_status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "pending_review",
+              "approved",
+              "rejected",
+              "expired"
+            ],
+            "title": "Approval Status",
+            "default": "draft"
+          },
+          "content_version": {
+            "type": "integer",
+            "title": "Content Version",
+            "default": 1
+          },
+          "evidence_fingerprint": {
+            "type": "string",
+            "title": "Evidence Fingerprint"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Review"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "review_history": {
+            "items": {
+              "$ref": "#/components/schemas/Review"
+            },
+            "type": "array",
+            "title": "Review History"
+          },
+          "scope_note": {
+            "type": "string",
+            "title": "Scope Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cluster_id",
+          "title",
+          "claim_summary",
+          "evidence_based_status",
+          "explanation",
+          "scam_warning_signs",
+          "recommended_user_actions",
+          "authoritative_source_links",
+          "language",
+          "language_content_status",
+          "created_at",
+          "last_verified_at",
+          "expires_at",
+          "evidence_fingerprint",
+          "scope_note"
+        ],
+        "title": "AlertDraft"
+      },
+      "ApproveRequest": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "reviewer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Reviewer Id"
+          },
+          "evidence_reviewed": {
+            "type": "boolean",
+            "const": true,
+            "title": "Evidence Reviewed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_version",
+          "reviewer_id",
+          "evidence_reviewed"
+        ],
+        "title": "ApproveRequest"
+      },
+      "ClaimResult": {
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Claim Id"
+          },
+          "claim_text": {
+            "type": "string",
+            "maxLength": 1200,
+            "title": "Claim Text"
+          },
+          "original_span": {
+            "type": "string",
+            "maxLength": 3000,
+            "title": "Original Span"
+          },
+          "entities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Entities"
+          },
+          "dates": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Dates"
+          },
+          "qualifiers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Qualifiers"
+          },
+          "normalized_claim": {
+            "type": "string",
+            "title": "Normalized Claim"
+          },
+          "lexical_hash": {
+            "type": "string",
+            "title": "Lexical Hash"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "false",
+              "partially_true",
+              "outdated",
+              "misleading_context",
+              "unconfirmed"
+            ],
+            "title": "Verdict"
+          },
+          "grounded_explanation": {
+            "type": "string",
+            "maxLength": 1800,
+            "title": "Grounded Explanation"
+          },
+          "explanation": {
+            "type": "string",
+            "maxLength": 2500,
+            "title": "Explanation"
+          },
+          "short_summary": {
+            "type": "string",
+            "maxLength": 350,
+            "title": "Short Summary"
+          },
+          "key_points": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Key Points"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Evidence"
+          },
+          "risk": {
+            "$ref": "#/components/schemas/Risk"
+          },
+          "temporal_context": {
+            "$ref": "#/components/schemas/TemporalContext"
+          },
+          "original_context": {
+            "$ref": "#/components/schemas/OriginalContext"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          },
+          "next_step": {
+            "type": "string",
+            "title": "Next Step"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Checked At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "claim_text",
+          "original_span",
+          "entities",
+          "dates",
+          "qualifiers",
+          "normalized_claim",
+          "lexical_hash",
+          "verdict",
+          "grounded_explanation",
+          "explanation",
+          "short_summary",
+          "evidence",
+          "risk",
+          "temporal_context",
+          "original_context",
+          "limitations",
+          "next_step",
+          "checked_at"
+        ],
+        "title": "ClaimResult"
+      },
+      "Cluster": {
+        "properties": {
+          "cluster_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Cluster Id"
+          },
+          "canonical_claim": {
+            "type": "string",
+            "title": "Canonical Claim"
+          },
+          "first_observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "First Observed At"
+          },
+          "last_observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Observed At"
+          },
+          "unique_submission_count": {
+            "type": "integer",
+            "title": "Unique Submission Count",
+            "default": 0
+          },
+          "similar_observed_submissions": {
+            "items": {
+              "$ref": "#/components/schemas/ObservedClaim"
+            },
+            "type": "array",
+            "title": "Similar Observed Submissions"
+          },
+          "evidence_references": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceReference"
+            },
+            "type": "array",
+            "title": "Evidence References"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "observing",
+              "recurring",
+              "increasing",
+              "deferred",
+              "review_available"
+            ],
+            "title": "Status",
+            "default": "observing"
+          },
+          "trend": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Trend"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "canonical_claim",
+          "first_observed_at",
+          "last_observed_at"
+        ],
+        "title": "Cluster"
+      },
+      "DraftRequest": {
+        "properties": {
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "hi",
+              "mr"
+            ],
+            "title": "Language",
+            "default": "en"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DraftRequest"
+      },
+      "EditRequest": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "claim_summary": {
+            "type": "string",
+            "maxLength": 1200,
+            "minLength": 1,
+            "title": "Claim Summary"
+          },
+          "explanation": {
+            "type": "string",
+            "maxLength": 1800,
+            "minLength": 1,
+            "title": "Explanation"
+          },
+          "translation_reviewed": {
+            "type": "boolean",
+            "title": "Translation Reviewed",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_version",
+          "title",
+          "claim_summary",
+          "explanation"
+        ],
+        "title": "EditRequest"
+      },
+      "Evidence": {
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Evidence Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Title"
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2048,
+            "title": "Url"
+          },
+          "publisher": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Publisher"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "primary",
+              "secondary",
+              "fact_check",
+              "other"
+            ],
+            "title": "Source Type"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Retrieved At"
+          },
+          "stance": {
+            "type": "string",
+            "enum": [
+              "supports",
+              "contradicts",
+              "context",
+              "neutral",
+              "unclear"
+            ],
+            "title": "Stance",
+            "default": "unclear"
+          },
+          "excerpt": {
+            "type": "string",
+            "maxLength": 5000,
+            "title": "Excerpt"
+          },
+          "excerpt_provenance": {
+            "type": "string",
+            "enum": [
+              "fetched_page",
+              "search_excerpt",
+              "fact_check_api"
+            ],
+            "title": "Excerpt Provenance"
+          },
+          "what_source_says": {
+            "type": "string",
+            "title": "What Source Says",
+            "default": ""
+          },
+          "authority_basis": {
+            "type": "string",
+            "title": "Authority Basis"
+          },
+          "relevance_score": {
+            "type": "number",
+            "title": "Relevance Score",
+            "default": 0
+          },
+          "directly_relevant": {
+            "type": "boolean",
+            "title": "Directly Relevant",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "url",
+          "publisher",
+          "source_type",
+          "retrieved_at",
+          "excerpt",
+          "excerpt_provenance",
+          "authority_basis"
+        ],
+        "title": "Evidence"
+      },
+      "EvidenceReference": {
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Evidence Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "publisher": {
+            "type": "string",
+            "title": "Publisher"
+          },
+          "excerpt": {
+            "type": "string",
+            "title": "Excerpt"
+          },
+          "stance": {
+            "type": "string",
+            "enum": [
+              "supports",
+              "contradicts",
+              "context",
+              "neutral",
+              "unclear"
+            ],
+            "title": "Stance"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Retrieved At"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "eligible": {
+            "type": "boolean",
+            "title": "Eligible"
+          },
+          "issues": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Issues"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "evidence_id",
+          "url",
+          "publisher",
+          "excerpt",
+          "stance",
+          "retrieved_at",
+          "eligible",
+          "issues"
+        ],
+        "title": "EvidenceReference"
+      },
+      "ExportPayload": {
+        "properties": {
+          "alert_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Alert Id"
+          },
+          "content_version": {
+            "type": "integer",
+            "title": "Content Version"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "hi",
+              "mr"
+            ],
+            "title": "Language"
+          },
+          "channel_text": {
+            "type": "string",
+            "title": "Channel Text"
+          },
+          "approved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Approved At"
+          },
+          "reviewer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Reviewer Id"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "mode": {
+            "type": "string",
+            "const": "manual_copy_only",
+            "title": "Mode",
+            "default": "manual_copy_only"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "alert_id",
+          "content_version",
+          "language",
+          "channel_text",
+          "approved_at",
+          "reviewer_id",
+          "expires_at"
+        ],
+        "title": "ExportPayload"
+      },
+      "ExtractionResult": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "detected_language": {
+            "type": "string",
+            "title": "Detected Language"
+          },
+          "input_type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "image",
+              "audio",
+              "pdf",
+              "url"
+            ],
+            "title": "Input Type"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "extraction_details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Extraction Details"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "detected_language",
+          "input_type"
+        ],
+        "title": "ExtractionResult"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IngestRequest": {
+        "properties": {
+          "consent": {
+            "type": "boolean",
+            "const": true,
+            "title": "Consent"
+          },
+          "submission_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Submission Id"
+          },
+          "source_token": {
+            "type": "string",
+            "format": "password",
+            "title": "Source Token",
+            "writeOnly": true
+          },
+          "verification": {
+            "$ref": "#/components/schemas/VerificationResult"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "consent",
+          "submission_id",
+          "source_token",
+          "verification"
+        ],
+        "title": "IngestRequest"
+      },
+      "IngestResponse": {
+        "properties": {
+          "submission_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Submission Id"
+          },
+          "duplicate": {
+            "type": "boolean",
+            "title": "Duplicate"
+          },
+          "cluster_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cluster Ids"
+          },
+          "draft_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Draft Ids"
+          },
+          "deferred_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Deferred Reasons"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "submission_id",
+          "duplicate",
+          "cluster_ids",
+          "draft_ids",
+          "deferred_reasons"
+        ],
+        "title": "IngestResponse"
+      },
+      "ObservedClaim": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language"
+          },
+          "first_seen_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "First Seen At"
+          },
+          "last_seen_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Seen At"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "false",
+              "partially_true",
+              "outdated",
+              "misleading_context",
+              "unconfirmed"
+            ],
+            "title": "Verdict"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "language",
+          "first_seen_at",
+          "last_seen_at",
+          "verdict"
+        ],
+        "title": "ObservedClaim"
+      },
+      "OriginalContext": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_checked",
+              "inconclusive",
+              "found"
+            ],
+            "title": "Status",
+            "default": "not_checked"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes",
+            "default": ""
+          },
+          "source_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Urls"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "OriginalContext"
+      },
+      "RejectRequest": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "reviewer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Reviewer Id"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "insufficient_evidence",
+              "translation_needed",
+              "incorrect_content",
+              "other"
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_version",
+          "reviewer_id",
+          "reason"
+        ],
+        "title": "RejectRequest"
+      },
+      "Review": {
+        "properties": {
+          "reviewer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Reviewer Id"
+          },
+          "reviewed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Reviewed At"
+          },
+          "content_version": {
+            "type": "integer",
+            "title": "Content Version"
+          },
+          "content_hash": {
+            "type": "string",
+            "title": "Content Hash"
+          },
+          "evidence_fingerprint": {
+            "type": "string",
+            "title": "Evidence Fingerprint"
+          },
+          "evidence_review_status": {
+            "type": "string",
+            "enum": [
+              "reviewed",
+              "not_reviewed"
+            ],
+            "title": "Evidence Review Status"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected"
+            ],
+            "title": "Action"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "insufficient_evidence",
+                  "translation_needed",
+                  "incorrect_content",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reviewer_id",
+          "reviewed_at",
+          "content_version",
+          "content_hash",
+          "evidence_fingerprint",
+          "evidence_review_status",
+          "action"
+        ],
+        "title": "Review"
+      },
+      "Risk": {
+        "properties": {
+          "score": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Level"
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/RiskFactor"
+            },
+            "type": "array",
+            "title": "Factors"
+          },
+          "is_probability": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Probability",
+            "default": false
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "default": "Forwarding caution heuristic; not a probability that a claim is false."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "score",
+          "level",
+          "factors"
+        ],
+        "title": "Risk"
+      },
+      "RiskFactor": {
+        "properties": {
+          "rule": {
+            "type": "string",
+            "title": "Rule"
+          },
+          "weight": {
+            "type": "integer",
+            "title": "Weight"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "rule",
+          "weight",
+          "description"
+        ],
+        "title": "RiskFactor"
+      },
+      "TemporalContext": {
+        "properties": {
+          "claim_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claim Date"
+          },
+          "relevant_source_dates": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Relevant Source Dates"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "TemporalContext"
+      },
+      "Trend": {
+        "properties": {
+          "independent_in_window": {
+            "type": "integer",
+            "title": "Independent In Window"
+          },
+          "baseline_daily_average": {
+            "type": "number",
+            "title": "Baseline Daily Average"
+          },
+          "increasing": {
+            "type": "boolean",
+            "title": "Increasing"
+          },
+          "recurring": {
+            "type": "boolean",
+            "title": "Recurring"
+          },
+          "high_severity_indicators": {
+            "type": "boolean",
+            "title": "High Severity Indicators"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": "Consented retained submissions only; not population-wide WhatsApp activity."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "independent_in_window",
+          "baseline_daily_average",
+          "increasing",
+          "recurring",
+          "high_severity_indicators"
+        ],
+        "title": "Trend"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VerificationResult": {
+        "properties": {
+          "verification_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Verification Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "partial",
+              "no_checkable_claims"
+            ],
+            "title": "Status"
+          },
+          "input": {
+            "$ref": "#/components/schemas/ExtractionResult"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimResult"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Claims"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Checked At"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "response_language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "hi",
+              "mr"
+            ],
+            "title": "Response Language"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "child",
+              "teen",
+              "adult",
+              "senior"
+            ],
+            "title": "Audience"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "input",
+          "claims",
+          "summary",
+          "checked_at",
+          "response_language",
+          "audience"
+        ],
+        "title": "VerificationResult"
+      },
+      "VersionRequest": {
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_version"
+        ],
+        "title": "VersionRequest"
+      },
+      "WithdrawRequest": {
+        "properties": {
+          "source_token": {
+            "type": "string",
+            "format": "password",
+            "title": "Source Token",
+            "writeOnly": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_token"
+        ],
+        "title": "WithdrawRequest"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

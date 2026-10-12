@@ -11,6 +11,6 @@ export default defineConfig({
     environment: 'jsdom',
     fileParallelism: false,
     setupFiles: ['./tests/setup.ts'],
-    exclude: ['node_modules/**', '.next/**', 'e2e/**'],
+    exclude: ['node_modules/**', '.next/**', 'e2e/**', 'integration/**'],
   },
 });

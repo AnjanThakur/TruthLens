@@ -29,6 +29,13 @@ export function Header() {
             <Link href="/history" aria-current={path === '/history' ? 'page' : undefined}>
               {t.history}
             </Link>
+            <Link href="/alerts" aria-current={path === '/alerts' ? 'page' : undefined}>
+              {language === 'hi'
+                ? 'चेतावनी समीक्षा'
+                : language === 'mr'
+                  ? 'सूचना समीक्षा'
+                  : 'Alert review'}
+            </Link>
           </nav>
           <div className="preferences">
             <label className="sr-only" htmlFor="language">

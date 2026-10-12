@@ -1,6 +1,15 @@
 import 'server-only';
 import type { z } from 'zod';
 import { ApiError, errorMessage } from './errors';
+import { backendTimeout } from './timeouts';
+import { MAX_UPLOAD_BYTES } from './files';
+
+export function serverUploadLimit() {
+  const value = Number(process.env.MAX_UPLOAD_BYTES || MAX_UPLOAD_BYTES);
+  if (!Number.isInteger(value) || value < 1024 || value > MAX_UPLOAD_BYTES)
+    throw new ApiError('NOT_CONFIGURED', errorMessage('NOT_CONFIGURED'), 503);
+  return value;
+}
 
 export function isMockMode(env = process.env) {
   return (
@@ -61,11 +70,25 @@ export async function upstream<T>(
   path: string,
   schema: z.ZodType<T>,
   init?: RequestInit,
+  connection?: { base: string; token: string; timeout: number },
 ): Promise<T> {
-  const base = process.env.BACKEND_BASE_URL;
+  const base = connection?.base ?? process.env.BACKEND_BASE_URL;
   if (!base) throw new ApiError('NOT_CONFIGURED', errorMessage('NOT_CONFIGURED'), 503);
-  const url = new URL(base);
-  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password)
+  let url: URL;
+  try {
+    url = new URL(base);
+  } catch {
+    throw new ApiError('NOT_CONFIGURED', errorMessage('NOT_CONFIGURED'), 503);
+  }
+  const timeout = connection?.timeout ?? backendTimeout(process.env.BACKEND_TIMEOUT_MS);
+  if (
+    !['http:', 'https:'].includes(url.protocol) ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    !timeout
+  )
     throw new ApiError('NOT_CONFIGURED', errorMessage('NOT_CONFIGURED'), 503);
   let response: Response;
   try {
@@ -75,16 +98,13 @@ export async function upstream<T>(
       redirect: 'error',
       headers: {
         ...Object.fromEntries(new Headers(init?.headers).entries()),
-        ...(process.env.BACKEND_API_TOKEN
-          ? { Authorization: `Bearer ${process.env.BACKEND_API_TOKEN}` }
+        ...((connection?.token ?? process.env.BACKEND_API_TOKEN)
+          ? { Authorization: `Bearer ${connection?.token ?? process.env.BACKEND_API_TOKEN}` }
           : {}),
       },
       signal: init?.signal
-        ? AbortSignal.any([
-            init.signal,
-            AbortSignal.timeout(Number(process.env.BACKEND_TIMEOUT_MS) || 60000),
-          ])
-        : AbortSignal.timeout(Number(process.env.BACKEND_TIMEOUT_MS) || 60000),
+        ? AbortSignal.any([init.signal, AbortSignal.timeout(timeout)])
+        : AbortSignal.timeout(timeout),
     });
   } catch (error) {
     const code =
@@ -93,15 +113,21 @@ export async function upstream<T>(
   }
   if (!response.ok) {
     const code =
-      response.status === 429
-        ? 'RATE_LIMIT'
-        : response.status === 413
-          ? 'UPLOAD_TOO_LARGE'
-          : response.status === 415
-            ? 'UNSUPPORTED_FILE'
-            : response.status >= 500
-              ? 'BACKEND_OFFLINE'
-              : 'BAD_INPUT';
+      response.status === 504
+        ? 'TIMEOUT'
+        : response.status === 409
+          ? 'ALERT_CONFLICT'
+          : response.status === 403
+            ? 'FORBIDDEN'
+            : response.status === 429
+              ? 'RATE_LIMIT'
+              : response.status === 413
+                ? 'UPLOAD_TOO_LARGE'
+                : response.status === 415
+                  ? 'UNSUPPORTED_FILE'
+                  : response.status >= 500
+                    ? 'BACKEND_OFFLINE'
+                    : 'BAD_INPUT';
     throw new ApiError(code, errorMessage(code), response.status);
   }
   const reader = response.body?.getReader();

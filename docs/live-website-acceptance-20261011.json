@@ -1,0 +1,74 @@
+{
+  "checked_at": "2026-10-11T17:54:22.630Z",
+  "scope": "One newly approved real browser submission; all providers real; no WhatsApp send. Strict complete-pipeline acceptance is separate from grounded factual verdict and website rendering.",
+  "claim": "The World Health Organization was established on 7 April 1948.",
+  "tested_implementation_commit": "788361f75743aef70c299e4a8b67409a5c8365bb",
+  "website_rendering_status": "PASS",
+  "grounded_factual_verdict_status": "PASS",
+  "strict_complete_pipeline_status": "FAIL",
+  "http_status": 200,
+  "pipeline_status": "partial",
+  "verdict": "verified",
+  "warnings": [
+    "source_page_unavailable:url_dns_error"
+  ],
+  "root_cause": {
+    "stage": "contradiction source-page fetch",
+    "code": "url_dns_error",
+    "source_url": "https://en.wikipedia.org/wiki/World_Health_Organization",
+    "meaning": "DNS resolution did not complete successfully; retained as unreviewed search excerpt only, not decisive evidence. No actual backend extraction defect is established by this external fetch failure.",
+    "follow_up": "A later non-provider DNS-only lookup resolved successfully; the observed failure was temporary or intermittent, not established as a persistent DNS configuration defect. No verification was repeated."
+  },
+  "sources": [
+    {
+      "url": "https://www.who.int/hongkongchina/about-us",
+      "publisher": "World Health Organization",
+      "source_type": "primary",
+      "provenance": "fetched_page",
+      "stance": "supports",
+      "directly_relevant": true,
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-11T17:54:30.887894Z",
+      "eligible_decisive_source": true
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/World_Health_Organization",
+      "publisher": "en.wikipedia.org",
+      "source_type": "other",
+      "provenance": "search_excerpt",
+      "stance": "supports",
+      "directly_relevant": true,
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-11T17:54:33.416525Z",
+      "eligible_decisive_source": false
+    },
+    {
+      "url": "https://www.who.int/about/governance/constitution",
+      "publisher": "World Health Organization",
+      "source_type": "primary",
+      "provenance": "fetched_page",
+      "stance": "supports",
+      "directly_relevant": true,
+      "published_at": null,
+      "updated_at": null,
+      "retrieved_at": "2026-10-11T17:54:30.057279Z",
+      "eligible_decisive_source": true
+    }
+  ],
+  "provider_attempts": {
+    "gemini_attempts": 2,
+    "tavily_attempts": 2,
+    "twilio_attempts": 0
+  },
+  "rollback": "PASS: only controlled backend 8002 and website 3002 stopped; ordinary backend 8000, alerts 8001, feature website 3001 and owner website/adapter retained; worker paused and WhatsApp state untouched.",
+  "other_fresh_live_formats": {
+    "image": "NOT TESTED",
+    "audio": "NOT TESTED",
+    "pdf": "NOT TESTED",
+    "url_full_verification": "NOT TESTED"
+  },
+  "post_live_offline_fix": "Detailed ledger now explicitly labels search-excerpt-only sources as unavailable and non-decisive in EN/HI/MR; no extra live check.",
+  "executed_git_commit": "231ac1ac43446942a7a17d42b72b166c8b9db292"
+}

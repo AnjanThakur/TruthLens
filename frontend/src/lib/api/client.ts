@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import { ApiError, errorMessage } from './errors';
+import { CLIENT_TIMEOUT_MS } from './timeouts';
 import {
   extractionSchema,
   requireCompleted,
@@ -22,12 +23,14 @@ export async function request<T>(
       ...init,
       cache: 'no-store',
       signal: init?.signal
-        ? AbortSignal.any([init.signal, AbortSignal.timeout(90000)])
-        : AbortSignal.timeout(90000),
+        ? AbortSignal.any([init.signal, AbortSignal.timeout(CLIENT_TIMEOUT_MS)])
+        : AbortSignal.timeout(CLIENT_TIMEOUT_MS),
     });
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') throw error;
-    throw new ApiError('BACKEND_OFFLINE', errorMessage('BACKEND_OFFLINE'));
+    const code =
+      error instanceof Error && error.name === 'TimeoutError' ? 'TIMEOUT' : 'BACKEND_OFFLINE';
+    throw new ApiError(code, errorMessage(code));
   }
   const body = await response.json().catch(() => null);
   if (!response.ok) {
@@ -45,13 +48,24 @@ export const jsonRequest = (value: unknown, signal?: AbortSignal): RequestInit =
   body: JSON.stringify(value),
   signal,
 });
-export async function verify(input: VerifyRequest, signal: AbortSignal) {
+export async function verify(input: VerifyRequest, signal: AbortSignal, messageTime?: string) {
   const { verificationSchema } = await import('./contracts');
   let receipt: string | null = null;
   const result = requireCompleted(
-    await request('/api/verify', verificationSchema, jsonRequest(input, signal), (response) => {
-      receipt = response.headers.get('X-TruthLens-Receipt');
-    }),
+    await request(
+      '/api/verify',
+      verificationSchema,
+      {
+        ...jsonRequest(input, signal),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(messageTime ? { 'X-TruthLens-Message-Time': messageTime } : {}),
+        },
+      },
+      (response) => {
+        receipt = response.headers.get('X-TruthLens-Receipt');
+      },
+    ),
   );
   return { result, receipt };
 }
@@ -74,7 +88,10 @@ export async function explain(
     await request(
       '/api/explain',
       explanationSchema,
-      jsonRequest({ verification, language, audience }, signal),
+      jsonRequest(
+        { result: verification, language, audience: audience === 'easy' ? 'senior' : 'adult' },
+        signal,
+      ),
     ),
   );
 }

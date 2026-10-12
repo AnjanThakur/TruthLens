@@ -1,0 +1,15 @@
+# Tested Python 3.12 Twilio Sandbox dependency closure; no credentials.
+-r requirements-runtime-lock.txt
+aiohappyeyeballs==2.7.1
+aiohttp==3.14.5
+aiohttp-retry==2.9.1
+aiosignal==1.4.0
+charset-normalizer==3.5.2
+frozenlist==1.8.0
+multidict==7.1.0
+propcache==0.5.4
+pyjwt==2.15.1
+requests==2.34.2
+twilio==9.11.2
+urllib3==2.8.0
+yarl==1.25.1

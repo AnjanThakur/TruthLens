@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -14,6 +15,8 @@ class Settings(BaseSettings):
     tavily_api_key: SecretStr = SecretStr("")
     gemini_model: str = "gemini-3.8-flash"
     gemini_audio_model: str = ""
+    gemini_api_version: Literal["v1", "v1beta"] = "v1"
+    provider_server_cooldown_seconds: int = Field(default=15, ge=0, le=120)
     provider_max_attempts: int = Field(default=2, ge=1, le=3)
     provider_max_retry_wait_seconds: float = Field(default=3, ge=0, le=30)
     verification_cache_ttl_seconds: int = Field(default=120, ge=0, le=300)
@@ -21,11 +24,15 @@ class Settings(BaseSettings):
     document_chunk_chars: int = Field(default=6000, ge=100, le=12000)
     max_document_chunks: int = Field(default=8, ge=1, le=32)
     source_excerpt_chars: int = Field(default=3000, ge=900, le=5000)
-    llm_timeout_seconds: float | None = Field(default=None, ge=1, le=120)
+    # Structured model generation can outlive the shorter search/page timeout.
+    # Explicit LLM_TIMEOUT_SECONDS still overrides this bounded default.
+    llm_timeout_seconds: float | None = Field(default=45, ge=1, le=120)
     url_timeout_seconds: float | None = Field(default=None, ge=1, le=60)
     max_prompt_chars: int = Field(default=65000, ge=1000, le=100000)
     search_depth: str = Field(default="basic", pattern=r"^(basic|advanced)$")
-    max_search_queries_per_claim: int = Field(default=1, ge=1, le=3)
+    max_search_queries_per_claim: int = Field(default=4, ge=1, le=4)
+    max_search_attempts_per_check: int = Field(default=8, ge=1, le=24)
+    max_llm_attempts_per_check: int = Field(default=12, ge=1, le=32)
     search_cache_ttl_seconds: int = Field(default=900, ge=0, le=3600)
     search_cache_entries: int = Field(default=128, ge=1, le=512)
     max_audio_seconds: int = Field(default=300, ge=1, le=600)

@@ -8,10 +8,15 @@ export async function GET(request: Request) {
     try {
       const supabase = await serverSupabase();
       const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (!error) return NextResponse.redirect(`${origin}/history`);
+      if (!error) return redirect(`${origin}/history`);
     } catch {
       /* No token details in logs or URL. */
     }
   }
-  return NextResponse.redirect(`${origin}/history?auth=failed`);
+  return redirect(`${origin}/history?auth=failed`);
+}
+function redirect(location: string) {
+  const response = NextResponse.redirect(location);
+  response.headers.set('Cache-Control', 'no-store, private');
+  return response;
 }

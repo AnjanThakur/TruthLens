@@ -1,4 +1,5 @@
 import asyncio
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, File, Request, UploadFile
@@ -23,7 +24,19 @@ from app.services.extract.url import article_from_html
 router = APIRouter(
     prefix="/api",
     responses={
-        status: {"model": ErrorResponse} for status in (400, 413, 415, 422, 500, 502, 503, 504)
+        # Python 3.12 and 3.14 use different default HTTP reason phrases.
+        # Keep the published OpenAPI contract independent of the interpreter.
+        status: {"model": ErrorResponse, "description": description}
+        for status, description in {
+            400: "Bad Request",
+            413: "Content Too Large",
+            415: "Unsupported Media Type",
+            422: "Unprocessable Content",
+            500: "Internal Server Error",
+            502: "Bad Gateway",
+            503: "Service Unavailable",
+            504: "Gateway Timeout",
+        }.items()
     },
 )
 
@@ -57,6 +70,23 @@ async def health(request: Request):
 
 @router.post("/verify", response_model=VerificationResult)
 async def verify(payload: VerifyRequest, request: Request):
+    stamp = request.headers.get("x-truthlens-message-time")
+    if stamp:
+        try:
+            if len(stamp) > 64:
+                raise ValueError
+            message_time = datetime.fromisoformat(stamp)
+            if (
+                message_time.tzinfo is None
+                or not 2000 <= message_time.year
+                or message_time > datetime.now(UTC) + timedelta(minutes=5)
+            ):
+                raise ValueError
+        except ValueError:
+            raise AppError(
+                "message_time_invalid", "Use a timezone-aware original message timestamp.", 400
+            ) from None
+        return await request.app.state.verifier.verify(payload, message_time=message_time)
     return await request.app.state.verifier.verify(payload)
 
 

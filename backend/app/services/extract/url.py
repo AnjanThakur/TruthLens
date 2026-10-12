@@ -66,7 +66,10 @@ class DNSResolver:
             return list(dict.fromkeys(str(x[4][0]) for x in results))
         except (OSError, TimeoutError) as exc:
             raise AppError(
-                "url_dns_error", "The public site's address could not be resolved.", 502
+                "url_dns_error",
+                "The public site's address could not be resolved.",
+                502,
+                category="dns_failure",
             ) from exc
 
 
@@ -97,7 +100,9 @@ class SafeFetcher:
             ):
                 return await self._fetch(url)
         except TimeoutError as exc:
-            raise AppError("url_timeout", "The public site took too long to respond.", 504) from exc
+            raise AppError(
+                "url_timeout", "The public site took too long to respond.", 504, category="deadline"
+            ) from exc
 
     async def _fetch(self, url: str) -> Fetched:
         current = canonical_url(url)
@@ -139,7 +144,26 @@ class SafeFetcher:
                                 )
                             current = canonical_url(urljoin(current, location))
                             continue
-                        response.raise_for_status()
+                        if response.status_code >= 400:
+                            status = response.status_code
+                            category = (
+                                "access_denied"
+                                if status in {401, 403}
+                                else "not_found"
+                                if status in {404, 410}
+                                else "rate_limited"
+                                if status == 429
+                                else "transient_server"
+                                if status >= 500
+                                else "http_rejected"
+                            )
+                            raise AppError(
+                                "url_fetch_error",
+                                "The source rejected the download.",
+                                502,
+                                category=category,
+                                provider_status=status,
+                            )
                         if response.headers.get("content-encoding", "identity").lower() not in {
                             "",
                             "identity",
@@ -182,11 +206,24 @@ class SafeFetcher:
                         return Fetched(current, bytes(chunks), kind, response.charset_encoding)
             except httpx.TimeoutException as exc:
                 raise AppError(
-                    "url_timeout", "The public site took too long to respond.", 504
+                    "url_timeout",
+                    "The public site took too long to respond.",
+                    504,
+                    category="timeout",
+                ) from exc
+            except httpx.ConnectError as exc:
+                raise AppError(
+                    "url_fetch_error",
+                    "The source connection could not be established.",
+                    502,
+                    category="connection_failed",
                 ) from exc
             except httpx.HTTPError as exc:
                 raise AppError(
-                    "url_fetch_error", "The public page could not be downloaded safely.", 502
+                    "url_fetch_error",
+                    "The public page could not be downloaded safely.",
+                    502,
+                    category="transport_error",
                 ) from exc
         raise AppError("url_redirect_limit", "The site redirected too many times.", 422)
 
@@ -270,7 +307,8 @@ def article_from_html(body: bytes, url: str, charset: str | None = None) -> Extr
         )
     if metadata["content_restricted"]:
         notes.append("article_content_incomplete: Publisher metadata indicates restricted content.")
-    if len(text) < 200:
+    short = len(text) < 200
+    if short:
         notes.append(
             "article_short_content: Only a short passage was extracted; review its completeness."
         )
@@ -288,6 +326,10 @@ def article_from_html(body: bytes, url: str, charset: str | None = None) -> Extr
             "text_encoding": encoding,
             **metadata,
             "full_text_chars": len(text),
-            "content_complete": not metadata["content_restricted"] and not lossy,
+            # A brief semantic article/notice can be complete. A short generic
+            # extraction (e.g. video-player chrome) cannot claim completeness.
+            "content_complete": not metadata["content_restricted"]
+            and not lossy
+            and not (short and not fallback),
         },
     )

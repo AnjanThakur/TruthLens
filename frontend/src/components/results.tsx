@@ -18,6 +18,14 @@ import type { Verification, Explanation } from '@/lib/api/contracts';
 import { locale, stanceLabels, verdictLabels } from '@/lib/i18n';
 import { isSynthetic } from '@/lib/fixtures';
 import { usePreferences } from './preferences';
+import {
+  assessmentFailed,
+  assessmentFailureText,
+  displayWarnings,
+  evidenceStateText,
+  relevantSources,
+  retrievalDiagnostic,
+} from '@/lib/results';
 const verdictIcons = {
   verified: CheckCircle2,
   false: XCircle,
@@ -57,17 +65,18 @@ export function Results({
   );
   const synthetic = isSynthetic(result);
   const formatDate = (value: string | null) =>
-    value
+    value && !Number.isNaN(Date.parse(value))
       ? new Intl.DateTimeFormat(locale[language], {
           dateStyle: 'medium',
           timeZone: 'Asia/Kolkata',
         }).format(new Date(value))
       : t.noDate;
   const displayedSummary = explanation?.summary ?? result.summary;
+  const warnings = displayWarnings(result.warnings, language);
   const summary = [
     synthetic ? t.mock : '',
     displayedSummary,
-    `${t.checked}: ${result.checked_at}`,
+    `${t.checked}: ${formatDate(result.checked_at)}`,
     ...result.claims.flatMap((claim) => [
       `${t.claim}: ${claim.claim_text}`,
       verdictLabels[language][claim.verdict],
@@ -75,7 +84,7 @@ export function Results({
         claim.explanation,
       ...claim.evidence.map(
         (e) =>
-          `${e.publisher} — ${e.title}\n${stanceLabels[language][e.stance]}: ${e.what_source_says}\n${t.published}: ${formatDate(e.published_at)}; ${t.retrieved}: ${formatDate(e.retrieved_at)}\n${e.url}`,
+          `${e.publisher} — ${e.title}\n${stanceLabels[language][e.stance]}: ${e.what_source_says || evidenceStateText(e, language, assessmentFailed(claim))}\n${!e.what_source_says && e.excerpt ? `${t.excerpt}: ${e.excerpt}\n` : ''}${t.published}: ${formatDate(e.published_at)}; ${t.retrieved}: ${formatDate(e.retrieved_at)}\n${e.url}`,
       ),
       ...claim.limitations,
       claim.next_step,
@@ -125,6 +134,15 @@ export function Results({
         </p>
       )}
       <p className="result-summary">{displayedSummary}</p>
+      {result.status === 'partial' && (
+        <p className="notice" role="status">
+          {language === 'hi'
+            ? 'आंशिक जाँच: कुछ प्रमाण या प्रसंस्करण अधूरा है। चेतावनियाँ देखें।'
+            : language === 'mr'
+              ? 'अंशतः तपासणी: काही पुरावे किंवा प्रक्रिया अपूर्ण आहे. सूचना वाचा.'
+              : 'Partial check: some evidence or processing was incomplete. Review the warnings and limitations.'}
+        </p>
+      )}
       <p className="meta-line">
         {t.checked}{' '}
         <time dateTime={result.checked_at}>
@@ -145,10 +163,10 @@ export function Results({
       {result.warnings.length > 0 && (
         <details className="service-notes">
           <summary>
-            {t.warnings} ({result.warnings.length})
+            {t.warnings} ({warnings.length})
           </summary>
           <ul>
-            {result.warnings.map((warning, i) => (
+            {warnings.map((warning, i) => (
               <li key={i}>{warning}</li>
             ))}
           </ul>
@@ -205,93 +223,130 @@ export function Results({
                 {rewritten?.short_summary ?? claim.short_summary}
               </p>
               <p dir="auto">{rewritten?.explanation ?? claim.explanation}</p>
-              {claim.temporal_context && (
+              {claim.temporal_context.notes && (
                 <p>
                   <strong>{t.temporal}: </strong>
-                  {claim.temporal_context}
+                  {claim.temporal_context.notes}
                 </p>
               )}
-              {claim.original_context && (
+              {claim.original_context.notes && (
                 <p>
                   <strong>{t.context}: </strong>
-                  {claim.original_context}
+                  {claim.original_context.notes}
                 </p>
               )}
               <div className="evidence-section">
                 <h4>
-                  {t.sources} <span>{claim.evidence.length}</span>
+                  {language === 'en'
+                    ? 'Evidence for this claim'
+                    : language === 'hi'
+                      ? 'इस दावे के प्रमाण'
+                      : 'या दाव्याचे पुरावे'}
                 </h4>
-                {!claim.evidence.length && (
-                  <p className="no-evidence">
-                    <HelpCircle size={20} aria-hidden="true" />
-                    {t.noEvidence}
+                {relevantSources(claim).map((source) => (
+                  <p key={source.evidence_id}>
+                    <a href={source.url} target="_blank" rel="noopener noreferrer">
+                      {source.publisher}: {source.title}
+                    </a>{' '}
+                    — {stanceLabels[language][source.stance]} · {formatDate(source.published_at)}
                   </p>
-                )}
-                {claim.evidence.map((evidence, i) => (
-                  <div className="evidence-record" key={`${evidence.url}-${i}`}>
-                    <div className="evidence-top">
-                      <span className="publisher">{evidence.publisher}</span>
-                      <span className={`stance stance-${evidence.stance}`}>
-                        {stanceLabels[language][evidence.stance]}
-                      </span>
-                    </div>
-                    <h5>
-                      <a href={evidence.url} target="_blank" rel="noopener noreferrer">
-                        {evidence.title}
-                        <ArrowUpRight size={16} aria-hidden="true" />
-                        <span className="sr-only"> — {t.original}</span>
-                      </a>
-                    </h5>
-                    <a
-                      className="source-url"
-                      href={evidence.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {evidence.url}
-                    </a>
-                    <p className="source-paraphrase">
-                      <strong>{t.says}: </strong>
-                      {evidence.what_source_says || '—'}
-                    </p>
-                    {evidence.excerpt && (
-                      <details>
-                        <summary>{t.excerpt}</summary>
-                        <blockquote dir="auto">{evidence.excerpt}</blockquote>
-                      </details>
-                    )}
-                    <dl className="source-dates">
-                      <div>
-                        <dt>{t.published}</dt>
-                        <dd>
-                          {evidence.published_at ? (
-                            <time dateTime={evidence.published_at}>
-                              {formatDate(evidence.published_at)}
-                            </time>
-                          ) : (
-                            t.noDate
-                          )}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>{t.retrieved}</dt>
-                        <dd>
-                          {evidence.retrieved_at ? (
-                            <time dateTime={evidence.retrieved_at}>
-                              {formatDate(evidence.retrieved_at)}
-                            </time>
-                          ) : (
-                            t.noDate
-                          )}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>{t.sourceType}</dt>
-                        <dd>{evidence.source_type}</dd>
-                      </div>
-                    </dl>
-                  </div>
                 ))}
+                {!relevantSources(claim).length && (
+                  <p>{assessmentFailed(claim) ? assessmentFailureText(language) : t.noEvidence}</p>
+                )}
+                <details open={claim.evidence.length <= 3}>
+                  <summary>
+                    {language === 'en'
+                      ? 'Full retrieved evidence ledger'
+                      : language === 'hi'
+                        ? 'सभी प्राप्त स्रोत'
+                        : 'सर्व मिळालेले स्रोत'}{' '}
+                    ({claim.evidence.length})
+                  </summary>
+                  <h4>
+                    {t.sources} <span>{claim.evidence.length}</span>
+                  </h4>
+                  {claim.evidence.map((evidence, i) => (
+                    <div className="evidence-record" key={`${evidence.url}-${i}`}>
+                      <div className="evidence-top">
+                        <span className="publisher">{evidence.publisher}</span>
+                        <span className={`stance stance-${evidence.stance}`}>
+                          {stanceLabels[language][evidence.stance]}
+                        </span>
+                      </div>
+                      <h5>
+                        <a href={evidence.url} target="_blank" rel="noopener noreferrer">
+                          {evidence.title}
+                          <ArrowUpRight size={16} aria-hidden="true" />
+                          <span className="sr-only"> — {t.original}</span>
+                        </a>
+                      </h5>
+                      <a
+                        className="source-url"
+                        href={evidence.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {evidence.url}
+                      </a>
+                      <p className="source-paraphrase">
+                        <strong>{t.says}: </strong>
+                        {evidence.what_source_says || '—'}
+                      </p>
+                      <p className="meta-line">
+                        {evidenceStateText(evidence, language, assessmentFailed(claim))}
+                      </p>
+                      {retrievalDiagnostic(evidence, language) && (
+                        <p className="meta-line">{retrievalDiagnostic(evidence, language)}</p>
+                      )}
+                      {evidence.excerpt_provenance === 'search_excerpt' && (
+                        <p className="meta-line">
+                          {language === 'hi'
+                            ? 'केवल खोज का अंश उपलब्ध है। पूरा पृष्ठ नहीं पढ़ा जा सका; यह निर्णायक प्रमाण नहीं है।'
+                            : language === 'mr'
+                              ? 'फक्त शोधातील उतारा उपलब्ध आहे. संपूर्ण पृष्ठ वाचता आले नाही; हा निर्णायक पुरावा नाही.'
+                              : 'Search excerpt only. The full page could not be read; this is not decisive evidence.'}
+                        </p>
+                      )}
+                      {evidence.excerpt && (
+                        <details>
+                          <summary>{t.excerpt}</summary>
+                          <blockquote dir="auto">{evidence.excerpt}</blockquote>
+                        </details>
+                      )}
+                      <dl className="source-dates">
+                        <div>
+                          <dt>{t.published}</dt>
+                          <dd>
+                            {evidence.published_at ? (
+                              <time dateTime={evidence.published_at}>
+                                {formatDate(evidence.published_at)}
+                              </time>
+                            ) : (
+                              t.noDate
+                            )}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>{t.retrieved}</dt>
+                          <dd>
+                            {evidence.retrieved_at ? (
+                              <time dateTime={evidence.retrieved_at}>
+                                {formatDate(evidence.retrieved_at)}
+                              </time>
+                            ) : (
+                              t.noDate
+                            )}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>{t.sourceType}</dt>
+                          <dd>{evidence.source_type}</dd>
+                        </div>
+                      </dl>
+                    </div>
+                  ))}
+                </details>
               </div>
               {claim.limitations.length > 0 && (
                 <div className="claim-limits">

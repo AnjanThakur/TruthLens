@@ -1,12 +1,11 @@
-# Source priority and scope
+# Source priority and ownership
 
-1. User authorization and constraints.
-2. `TruthLens_Person2_Codex_Package/TruthLens_PS_Aligned_Two_Developer_Plan.docx` — primary product, ownership and acceptance authority.
-3. `TruthLens_Person2_Codex_Master_Handoff.md` — supporting implementation guidance.
-4. `TruthLens_Person2_Synthetic_UI_Fixtures.json` — fictional UI-only test data.
+1. Current owner instructions and approved W0-W6 roadmap.
+2. Original TruthLens_PS_Aligned_Two_Developer_Plan.docx: primary product requirements.
+3. Approved WhatsApp guide/prompt: required WhatsApp and standalone Person 2 adapter.
+4. Person 1 contract/OpenAPI: actual wire schemas, protected by client contract tests.
+5. Supplementary master handoff and explicitly fictional UI fixtures.
 
-P2 scope: Next.js UX, evidence presentation, en/hi/mr interface and explanation controls, accessible reading, secure opt-in Supabase history, typed integration, QA, deployment preparation and optional Meta platform setup.
+P2 owns the website, consent-aware history, API consumers, standalone connector, Meta configuration preparation, deployment preparation and QA. P1 owns every extraction, verification and explanation engine. The approved WhatsApp reassignment replaced the original optional P1-webhook/P2-setup split. The owner's later full-system implementation task explicitly authorizes coordinated backend, website and adapter changes while preserving their existing contracts and private state.
 
-P1 scope: FastAPI, actual extraction/OCR/transcription, atomic claim finding, live retrieval, factual verdicts, grounded language generation, signed WhatsApp webhook and messaging. No substitutes for these services are implemented here.
-
-G5 features are deferred. No clustering, radar, timeline, public truth-card hosting or WhatsApp webhook code is included in G0–G4.
+Account actions, real WhatsApp sends, paid provider tests and production publication need separate owner approval. Provider-key rotation must be confirmed first. No silent schema/verdict changes or fabricated checks. See whatsapp-gates.md for actual acceptance.

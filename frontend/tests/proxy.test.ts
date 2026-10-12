@@ -43,6 +43,19 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 describe('live proxy isolation and errors', () => {
+  it.each([
+    ['BACKEND_BASE_URL', 'not a URL'],
+    ['BACKEND_BASE_URL', 'http://p1.test?token=private'],
+    ['BACKEND_TIMEOUT_MS', '-1'],
+    ['BACKEND_TIMEOUT_MS', 'Infinity'],
+    ['BACKEND_TIMEOUT_MS', '330000'],
+  ])('rejects invalid %s before making any request', async (key, value) => {
+    vi.stubEnv(key, value);
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    expect((await verifyRoute(req('/api/verify', input))).status).toBe(503);
+    expect(fetch).not.toHaveBeenCalled();
+  });
   it('production ignores fixture flags, calls fixed upstream and signs the live snapshot', async () => {
     vi.stubEnv('HISTORY_SIGNING_SECRET', 'test-secret'.repeat(5));
     const fetch = vi.fn<typeof globalThis.fetch>(async () => Response.json(backendResult()));
@@ -52,6 +65,32 @@ describe('live proxy isolation and errors', () => {
     expect(response.headers.get('X-TruthLens-Receipt')).toBeTruthy();
     expect(String(fetch.mock.calls[0][0])).toBe('http://p1.test/api/verify');
     expect(response.headers.get('Cache-Control')).toContain('no-store');
+  });
+  it('forwards original message time without changing the body contract', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(async () => Response.json(backendResult()));
+    vi.stubGlobal('fetch', fetch);
+    const request = req('/api/verify', input);
+    request.headers.set('X-TruthLens-Message-Time', '2026-10-04T22:00:00+05:30');
+    expect((await verifyRoute(request)).status).toBe(200);
+    const options = fetch.mock.calls[0][1]!;
+    expect(new Headers(options.headers).get('X-TruthLens-Message-Time')).toBe(
+      '2026-10-04T22:00:00+05:30',
+    );
+    expect(JSON.parse(String(options.body))).toEqual({
+      ...input,
+      input_language: 'auto',
+      response_language: 'en',
+      audience: 'adult',
+      jurisdiction: 'IN',
+    });
+  });
+  it('rejects timezone-less original message time before provider calls', async () => {
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    const request = req('/api/verify', input);
+    request.headers.set('X-TruthLens-Message-Time', '2026-10-04T22:00:00');
+    expect((await verifyRoute(request)).status).toBe(400);
+    expect(fetch).not.toHaveBeenCalled();
   });
   it('rejects synthetic data returned by a live upstream', async () => {
     vi.stubGlobal(
@@ -71,6 +110,28 @@ describe('live proxy isolation and errors', () => {
     expect(JSON.stringify(body)).not.toContain('private stack trace');
     expect(body).not.toHaveProperty('claims');
   });
+  it.each(['llm_timeout', 'request_timeout'])(
+    'preserves the timeout category for backend %s without forwarding private diagnostics',
+    async (code) => {
+      const fetch = vi.fn(async () =>
+        Response.json(
+          { error: { code, message: 'private provider detail', request_id: 'private-id' } },
+          { status: 504 },
+        ),
+      );
+      vi.stubGlobal('fetch', fetch);
+      const response = await verifyRoute(req('/api/verify', input));
+      expect(response.status).toBe(504);
+      expect(await response.json()).toEqual({
+        error: {
+          code: 'TIMEOUT',
+          message: 'The service took too long. Your submission has not been saved. Please retry.',
+        },
+      });
+      expect(response.headers.get('X-TruthLens-Receipt')).toBeNull();
+      expect(fetch).toHaveBeenCalledTimes(1);
+    },
+  );
   it('handles offline, timeout, malformed and empty-claim results', async () => {
     vi.stubGlobal(
       'fetch',
@@ -129,7 +190,7 @@ describe('live proxy isolation and errors', () => {
     expect(
       (
         await explainRoute(
-          req('/api/explain', { verification: backendResult(), language: 'hi', audience: 'easy' }),
+          req('/api/explain', { result: backendResult(), language: 'hi', audience: 'senior' }),
         )
       ).status,
     ).toBe(502);

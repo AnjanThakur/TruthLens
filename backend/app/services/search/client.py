@@ -2,14 +2,36 @@ import asyncio
 import math
 import time
 from collections import OrderedDict
+from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import datetime
+from email.utils import parsedate_to_datetime
 from typing import Protocol
 
 import httpx
 
 from app.config import Settings
 from app.errors import AppError
+
+
+@dataclass
+class SearchBudget:
+    maximum: int
+    used: int = 0
+
+    def reserve(self) -> None:
+        if self.used >= self.maximum:
+            raise AppError(
+                "search_budget_exhausted",
+                "The bounded search investigation is complete; check the remaining claims separately.",
+                503,
+            )
+        self.used += 1
+
+
+CURRENT_SEARCH_BUDGET: ContextVar[SearchBudget | None] = ContextVar("search_budget", default=None)
+CURRENT_SEARCH_DOMAINS: ContextVar[tuple[str, ...]] = ContextVar("search_domains", default=())
 
 
 @dataclass
@@ -35,11 +57,17 @@ class TavilySearch:
     def __init__(self, settings: Settings, transport: httpx.AsyncBaseTransport | None = None):
         self.settings = settings
         self.transport = transport
-        self._cache: OrderedDict[str, tuple[float, list[SearchHit]]] = OrderedDict()
+        self._cache: OrderedDict[tuple[str, tuple[str, ...]], tuple[float, list[SearchHit]]] = (
+            OrderedDict()
+        )
         self._lock = asyncio.Lock()
         self.request_count = 0
+        self._blocked_until = 0.0
+        self._blocked_code = "search_rate_limited"
 
     def reserve_request(self) -> None:
+        if budget := CURRENT_SEARCH_BUDGET.get():
+            budget.reserve()
         self.request_count += 1
 
     async def search(self, query: str) -> list[SearchHit]:
@@ -47,13 +75,20 @@ class TavilySearch:
             raise AppError(
                 "search_unavailable", "Set TAVILY_API_KEY to retrieve source evidence.", 503
             )
-        key = " ".join(query.casefold().split())
+        domains = CURRENT_SEARCH_DOMAINS.get()
+        key = (" ".join(query.casefold().split()), domains)
         async with self._lock:
             cached = self._cache.get(key)
             if cached and time.monotonic() - cached[0] < self.settings.search_cache_ttl_seconds:
                 self._cache.move_to_end(key)
                 return deepcopy(cached[1])
             self._cache.pop(key, None)
+            if time.monotonic() < self._blocked_until:
+                raise AppError(
+                    self._blocked_code,
+                    "Search is cooling down after a provider limit. No new request was made.",
+                    503,
+                )
             hits = await self._search(query)
             if self.settings.search_cache_ttl_seconds:
                 self._cache[key] = (time.monotonic(), deepcopy(hits))
@@ -62,6 +97,7 @@ class TavilySearch:
             return hits
 
     async def _search(self, query: str) -> list[SearchHit]:
+        domains = CURRENT_SEARCH_DOMAINS.get()
         async with httpx.AsyncClient(
             timeout=self.settings.external_timeout_seconds,
             trust_env=False,
@@ -79,15 +115,37 @@ class TavilySearch:
                             "max_results": self.settings.max_evidence,
                             "include_answer": False,
                             "include_raw_content": False,
+                            **(
+                                {"include_domains": list(domains), "include_domains_mode": "prefer"}
+                                if domains
+                                else {}
+                            ),
                         },
                     )
+                    if response.status_code in {402, 432, 433}:
+                        self._blocked_until = time.monotonic() + 900
+                        self._blocked_code = "search_quota_exhausted"
+                        raise AppError(
+                            "search_quota_exhausted",
+                            "Tavily search credits are exhausted. No automatic retry was made.",
+                            503,
+                        )
                     if (
-                        response.status_code in {429, 502, 503, 504}
+                        response.status_code in {502, 503, 504}
                         and attempt + 1 < self.settings.provider_max_attempts
                     ):
                         await asyncio.sleep(0.5)
                         continue
                     if response.status_code == 429:
+                        raw = response.headers.get("retry-after", "60")
+                        try:
+                            delay = float(raw)
+                        except ValueError:
+                            delay = 60
+                        if not math.isfinite(delay) or delay < 0:
+                            delay = 60
+                        self._blocked_until = time.monotonic() + min(max(delay, 1), 86400)
+                        self._blocked_code = "search_rate_limited"
                         raise AppError(
                             "search_rate_limited",
                             "Tavily's quota or rate limit was reached. Wait and retry.",
@@ -122,6 +180,15 @@ class TavilySearch:
                             ):
                                 published = None
                                 warnings.append("search_date_invalid_discarded")
+                            if published:
+                                try:
+                                    datetime.fromisoformat(published.replace("Z", "+00:00"))
+                                except ValueError:
+                                    try:
+                                        published = parsedate_to_datetime(published).isoformat()
+                                    except (ValueError, TypeError, OverflowError):
+                                        published = None
+                                        warnings.append("search_date_invalid_discarded")
                             hits.append(
                                 SearchHit(
                                     item["url"],

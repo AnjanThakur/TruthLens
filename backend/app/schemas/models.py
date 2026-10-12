@@ -85,7 +85,9 @@ class SourceAssessment(Model):
     evidence_id: str
     stance: Stance
     excerpt: str = Field(max_length=900)
-    what_source_says: str = Field(max_length=700)
+    # Compatibility only: the server renders the validated verbatim excerpt.
+    # Generating a second paraphrase added work and was always discarded.
+    what_source_says: str = Field(default="", max_length=700)
     directly_relevant: bool
 
 

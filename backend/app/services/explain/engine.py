@@ -50,16 +50,19 @@ UNCONFIRMED_REASONS = {
         "empty": "No usable source evidence was retrieved.",
         "conflict": "The retrieved sources disagree about this claim.",
         "weak": "The available sources do not establish this exact claim.",
+        "assessment_failed": "Source evidence was retrieved, but AI assessment failed. The evidence has not been accepted as supporting or contradicting this claim.",
     },
     "hi": {
         "empty": "काम आने वाला स्रोत प्रमाण नहीं मिला।",
         "conflict": "मिले स्रोतों में इस दावे पर मतभेद है।",
         "weak": "उपलब्ध स्रोत इस पूरे दावे की पुष्टि नहीं करते।",
+        "assessment_failed": "स्रोत प्रमाण मिले, लेकिन AI मूल्यांकन विफल हुआ। दावे के समर्थन या विरोध का निष्कर्ष स्वीकार नहीं हुआ।",
     },
     "mr": {
         "empty": "वापरता येईल असा स्रोत पुरावा मिळाला नाही.",
         "conflict": "मिळालेल्या स्रोतांत या दाव्याबद्दल मतभेद आहेत.",
         "weak": "उपलब्ध स्रोत या संपूर्ण दाव्याची खात्री देत नाहीत.",
+        "assessment_failed": "स्रोत पुरावे मिळाले, पण AI मूल्यांकन अयशस्वी झाले. दाव्याला आधार किंवा विरोध असल्याचा निष्कर्ष स्वीकारलेला नाही.",
     },
 }
 CHILD_STEP = {
@@ -90,17 +93,33 @@ async def format_claim(
             and e.excerpt_provenance == "fetched_page"
             and e.directly_relevant
             and "incomplete_content:" not in e.authority_basis
+            and "entity_mismatch:" not in e.authority_basis
         }
         kind = (
-            "empty"
+            "assessment_failed"
+            if any(note.startswith("Evidence assessment failed;") for note in claim.limitations)
+            else "empty"
             if not claim.evidence
             else "conflict"
             if {"supports", "contradicts"} <= stances
             else "weak"
         )
         reason = UNCONFIRMED_REASONS[language][kind]
+        checked = sum(
+            e.source_type != "other"
+            and e.excerpt_provenance == "fetched_page"
+            and "incomplete_content:" not in e.authority_basis
+            and "entity_mismatch:" not in e.authority_basis
+            for e in claim.evidence
+        )
+        subject = claim.claim_text[:280]
+        context = {
+            "en": f"For “{subject}”, {checked} complete reviewed source(s) were retrieved.",
+            "hi": f"“{subject}” के लिए {checked} पूर्ण, पहचाने गए स्रोत मिले।",
+            "mr": f"“{subject}” साठी {checked} पूर्ण, ओळखलेले स्रोत मिळाले.",
+        }[language]
         return Wording(
-            explanation=LABELS[language]["unconfirmed"] + " " + reason + " " + CAUTION[language],
+            explanation=context + " " + reason + " " + CAUTION[language],
             short_summary=LABELS[language]["unconfirmed"],
             key_points=[reason],
             next_step=CHILD_STEP[language] if audience == "child" else NEXT_STEP[language],
